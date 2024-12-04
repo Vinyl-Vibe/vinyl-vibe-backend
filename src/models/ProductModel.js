@@ -5,19 +5,9 @@ const mongoose = require("mongoose");
 // const someSchema = new mongoose.Schema(objectDefiningDataRules, SchemaOptions);
 const ProductSchema = new mongoose.Schema({
     name: {type: String, required: true, minLength: 4, trim: true},
-    sku: {type: Number, unique: true},
-    description: {type: String},
-    price: {type: Number, required: true},
-    category: {type: String},
-    artist: {type: String},
-    stockQuantity: {type: Number, default: 0},
-    images: [String],
-    dimensions: {
-        length: Number,
-        width: Number,
-        height: Number,
-        weight: Number,
-    },
+    sku: {type: Number}
+    // price: {type: Number, required: true},
+    // description: {type: String},
 });
 
 // 2. Make a model based on the schema

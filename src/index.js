@@ -5,6 +5,7 @@
 // Tell the server to listen to web traffic 
 
 require("dotenv").config();
+console.log("Loaded DATABASE_URL:", process.env.DATABASE_URL);
 
 // Server is configured in this file, not in index.js: 
 const {app} = require("./server.js");
