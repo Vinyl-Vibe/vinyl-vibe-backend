@@ -10,6 +10,9 @@
 const express = require("express");
 const app = express();
 
+app.use(express.json());
+// allows us to post JSON data to the server
+
 // Server app configuration goes here
 // middleware, routes, etc 
 
