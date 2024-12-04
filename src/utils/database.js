@@ -4,10 +4,16 @@ const { ProductModel } = require("../models/ProductModel");
 
 // Function to connect to whatever DB our environment variable says to connect to
 async function dbConnect(){
-    console.log(process.env.DATABASE_URL);
+    console.log("Attempting to connect to:", process.env.DATABASE_URL);
     let databaseUrl = process.env.DATABASE_URL || `mongodb://127.0.0.1:27017/${process.env.npm_package_name}`;
-
-    await mongoose.connect(databaseUrl);
+    
+    try {
+        await mongoose.connect(databaseUrl);
+        console.log("Successfully connected to MongoDB!");
+    } catch (error) {
+        console.error("Database connection error:", error);
+        throw error;
+    }
 }
 
 async function dbDisconnect(){

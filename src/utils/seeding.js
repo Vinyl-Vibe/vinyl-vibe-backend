@@ -1,3 +1,4 @@
+require('dotenv').config()
 const { createProduct } = require("./crud/ProductCrud");
 const { dbConnect, dbDisconnect } = require("./database");
 
@@ -13,10 +14,15 @@ async function seed() {
     }
 }
 
-dbConnect().then(() => {
+dbConnect().then(async () => {
     console.log("Connected to DB, seeding now!");
-    seed();
-})
+    await seed();
+    process.exit(0);
+}).catch(error => {
+    console.error("Error in seeding script:", error);
+    process.exit(1);
+});
+
 // seed();
 
 // await createPost();
