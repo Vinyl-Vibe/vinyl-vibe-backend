@@ -9,7 +9,7 @@
 
 const express = require("express");
 const { User } = require("./models/UserModel");
-const { generateJWT } = require("./functions/jwtFunctions");
+const { generateJWT, validateUserAuth } = require("./functions/jwtFunctions");
 
 const app = express();
 
@@ -58,6 +58,12 @@ app.post("/signup", async (request, response) => {
 
 // // Export the app so that other files can control when the server
 // // starts and stops 
+app.get("/protectedRoute", validateUserAuth, (request, response) => {
+	response.json({
+		message:"You can see protected content because you're signed in!"
+	})
+})
+
 module.exports = {
 	app
 };
