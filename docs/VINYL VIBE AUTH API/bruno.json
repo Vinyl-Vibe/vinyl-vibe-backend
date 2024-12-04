@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "VINYL VIBE AUTH API",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

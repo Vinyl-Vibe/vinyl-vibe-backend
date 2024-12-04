@@ -29,7 +29,7 @@ app.get("/", (request, response) => {
 // // Server app configuration is finished by this point 
 
 // Auth Routes
-app.post("/signup", async (requet, response) => {
+app.post("/signup", async (request, response) => {
 	// check that a username and password are provided in request.body
 	let username = request.body.username;
 	let password = request.body.password;
