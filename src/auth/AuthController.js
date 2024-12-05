@@ -1,5 +1,6 @@
 const AuthService = require("./AuthService");
 const UserService = require("../users/UserService");
+const EmailService = require('../utils/emailService');
 
 /**
  * AuthController handles the HTTP layer of authentication
@@ -121,6 +122,60 @@ const AuthController = {
 			res.status(401).json({ error: "Invalid token" });
 		}
 	},
+
+	async forgotPassword(req, res) {
+		try {
+			const { email } = req.body
+
+			if (!email) {
+				return res.status(400).json({
+					error: 'Email is required'
+				})
+			}
+
+			// Initiate password reset
+			await AuthService.initiatePasswordReset(email)
+
+			// Always return success (security through obscurity)
+			res.json({
+				message: 'If an account exists with that email, a password reset link has been sent.'
+			})
+		} catch (error) {
+			res.status(500).json({ error: 'Failed to process password reset request' })
+		}
+	},
+
+	async resetPassword(req, res) {
+		try {
+			const { token, newPassword } = req.body
+
+			if (!token || !newPassword) {
+				return res.status(400).json({
+					error: 'Token and new password are required'
+				})
+			}
+
+			// Validate password requirements
+			if (newPassword.length < 8) {
+				return res.status(400).json({
+					error: 'Password must be at least 8 characters long'
+				})
+			}
+
+			// Process password reset
+			const user = await AuthService.resetPassword(token, newPassword)
+
+			// Generate new auth token
+			const authToken = await AuthService.generateToken(user)
+
+			res.json({
+				message: 'Password successfully reset',
+				token: authToken
+			})
+		} catch (error) {
+			res.status(400).json({ error: error.message })
+		}
+	}
 };
 
 module.exports = AuthController;
