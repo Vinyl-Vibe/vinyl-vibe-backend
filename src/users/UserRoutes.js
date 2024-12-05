@@ -14,8 +14,13 @@ const { requireAdmin, requireOwnership } = require('../utils/middleware/roleMidd
  */
 
 // All user routes require authentication
-// Apply middleware to all routes in this router
 router.use(validateUserAuth)
+
+// Profile routes must come before parameterized routes
+// Why? Express matches routes in order
+// /profile would match /:userId if placed after
+router.get('/profile', validateUserAuth, UserController.getProfile)
+router.put('/profile', validateUserAuth, UserController.updateProfile)
 
 // Route definitions with role-based access control
 router.get('/', requireAdmin, UserController.getAllUsers)           // Admin only

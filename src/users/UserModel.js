@@ -30,6 +30,27 @@ const UserSchema = new mongoose.Schema(
 			enum: ["user", "admin"],
 			default: "user",
 		},
+		profile: {
+			firstName: {
+				type: String,
+				trim: true
+			},
+			lastName: {
+				type: String,
+				trim: true
+			},
+			phoneNumber: {
+				type: String,
+				trim: true
+			},
+			address: {
+				street: String,
+				city: String,
+				state: String,
+				postalCode: String,
+				country: String
+			}
+		},
 		resetPasswordToken: String,
 		resetPasswordExpires: Date
 	},

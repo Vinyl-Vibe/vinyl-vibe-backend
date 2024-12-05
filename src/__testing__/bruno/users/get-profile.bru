@@ -1,0 +1,11 @@
+meta {
+  name: Get Current User Profile
+  type: http
+  seq: 9
+}
+
+get {
+  url: http://localhost:8080/users/profile
+  body: none
+  auth: inherit
+}

@@ -88,6 +88,27 @@ const UserService = {
 		// Password comparison is handled by UserModel method
 		return User.findOne({ email });
 	},
+
+	async getUserProfile(userId) {
+		return User.findById(userId)
+			.select("-password -resetPasswordToken -resetPasswordExpires")
+			.lean();
+	},
+
+	async updateUserProfile(userId, profileData) {
+		return User.findByIdAndUpdate(
+			userId,
+			{ 
+				$set: { 
+					'profile': profileData 
+				} 
+			},
+			{ 
+				new: true, 
+				runValidators: true 
+			}
+		).select("-password");
+	}
 };
 
 module.exports = UserService;

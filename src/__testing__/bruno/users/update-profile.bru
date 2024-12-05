@@ -1,0 +1,26 @@
+meta {
+  name: Update User Profile
+  type: http
+  seq: 6
+}
+
+put {
+  url: http://localhost:8080/users/profile
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "firstName": "Damian",
+    "lastName": "Doe",
+    "phoneNumber": "+1234567890",
+    "address": {
+      "street": "123 Main St",
+      "city": "New York",
+      "state": "NY",
+      "postalCode": "10001",
+      "country": "USA"
+    }
+  }
+}

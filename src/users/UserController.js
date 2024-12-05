@@ -1,9 +1,9 @@
 const UserService = require("./UserService");
-const { AppError } = require('../utils/middleware/errorMiddleware');
+const { AppError } = require("../utils/middleware/errorMiddleware");
 
 /**
  * UserController handles HTTP layer for user management
- * 
+ *
  * Why separate from AuthController?
  * - Auth handles identity verification
  * - UserController handles user data management
@@ -18,12 +18,12 @@ const UserController = {
 			// - Ensures consistent behavior
 			// - Prevents undefined errors
 			const {
-				search,          // Search in email
-				role,           // Filter by role
-				start_date,     // Filter by creation date range
+				search, // Search in email
+				role, // Filter by role
+				start_date, // Filter by creation date range
 				end_date,
-				sort_by = 'email', // Sort field
-				order = 'asc'      // Sort order
+				sort_by = "email", // Sort field
+				order = "asc", // Sort order
 			} = req.query;
 
 			// Build filters object
@@ -40,16 +40,21 @@ const UserController = {
 			// Build sort object
 			const sort = {
 				field: sort_by,
-				order: order.toLowerCase()
+				order: order.toLowerCase(),
 			};
 
 			// Validate sort field
 			// Why validate?
 			// - Prevent invalid database queries
 			// - Security: prevent NoSQL injection
-			const allowedSortFields = ['email', 'role', 'createdAt'];
+			const allowedSortFields = ["email", "role", "createdAt"];
 			if (!allowedSortFields.includes(sort.field)) {
-				throw new AppError(`Invalid sort field. Allowed fields: ${allowedSortFields.join(', ')}`, 400);
+				throw new AppError(
+					`Invalid sort field. Allowed fields: ${allowedSortFields.join(
+						", "
+					)}`,
+					400
+				);
 			}
 
 			const users = await UserService.getAllUsers(filters, sort);
@@ -66,7 +71,7 @@ const UserController = {
 
 			const user = await UserService.getUserById(userId);
 			if (!user) {
-				throw new AppError('User not found', 404);
+				throw new AppError("User not found", 404);
 			}
 
 			res.json(user);
@@ -83,7 +88,7 @@ const UserController = {
 
 			const updatedUser = await UserService.updateUser(userId, updates);
 			if (!updatedUser) {
-				throw new AppError('User not found', 404);
+				throw new AppError("User not found", 404);
 			}
 
 			res.json(updatedUser);
@@ -99,11 +104,47 @@ const UserController = {
 
 			const deletedUser = await UserService.deleteUser(userId);
 			if (!deletedUser) {
-				throw new AppError('User not found', 404);
+				throw new AppError("User not found", 404);
 			}
 
 			// 204 indicates successful deletion with no content returned
 			res.status(204).send();
+		} catch (error) {
+			next(error);
+		}
+	},
+
+	// GET /users/profile - Get current user profile
+	async getProfile(req, res, next) {
+		try {
+			const userId = req.user.userId;
+			const profile = await UserService.getUserProfile(userId);
+
+			if (!profile) {
+				throw new AppError("Profile not found", 404);
+			}
+
+			res.json(profile);
+		} catch (error) {
+			next(error);
+		}
+	},
+
+	// PUT /users/profile - Update current user profile
+	async updateProfile(req, res, next) {
+		try {
+			const userId = req.user.userId;
+			const profileData = req.body;
+
+			const updatedProfile = await UserService.updateUserProfile(
+				userId,
+				profileData
+			);
+			if (!updatedProfile) {
+				throw new AppError("Profile not found", 404);
+			}
+
+			res.json(updatedProfile);
 		} catch (error) {
 			next(error);
 		}
