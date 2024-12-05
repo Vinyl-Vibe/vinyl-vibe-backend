@@ -8,19 +8,14 @@
 // - connections to file storage 
 
 const express = require("express");
-const cors = require ("cors");
+const corsMiddleware = require('./utils/middleware/corsMiddleware')
 
 const app = express();
 
 app.use(express.json());
 // allows us to post JSON data to the server
+app.use(corsMiddleware)
 
-let corsOptions = {
-	//                 CRA local                Vite                Deployed React app
-	origin: ["http://localhost:8080", "http://localhost:5173", "https://vinylvibe.live"],
-	optionsSuccessStatus: 200
-};
-app.use(cors(corsOptions));
 
 // Server app configuration goes here
 // middleware, routes, etc 
