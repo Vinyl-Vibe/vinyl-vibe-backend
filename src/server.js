@@ -9,7 +9,8 @@
 
 const express = require("express");
 const { User } = require("./users/UserModel");
-const { generateJWT, validateUserAuth } = require("./functions/jwtFunctions");
+const { generateJWT } = require("./utils/middleware/jwtMiddleware");
+const { validateUserAuth } = require("./utils/middleware/authMiddleware");
 const cors = require ("cors");
 
 const app = express();
