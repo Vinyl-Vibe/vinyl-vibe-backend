@@ -15,6 +15,7 @@ const ProductSchema = new mongoose.Schema(
         // General description of the product (optional field)
         description: {
             type: String,
+            required: false,         // Optional field
         },
         
         // Price of the product (required and cannot be negative number)
@@ -35,15 +36,19 @@ const ProductSchema = new mongoose.Schema(
         albumInfo: {
             artist: {
                 type: String,         // Artist name for the album
+                required: false,      // Optional field
             },
             genre: {
                 type: String,         // Genre of the album (e.g., Rock, Jazz)
+                required: false,      // Optional field
             },
             trackList: {
                 type: [String],       // List of track names (array of strings)
+                required: false,      // Optional field
             },
             releaseDate: {
                 type: Date,           // Release date of the album
+                required: false,      // Optional field
             },
         },
         
@@ -57,11 +62,13 @@ const ProductSchema = new mongoose.Schema(
         // Array of URLs for product images (optional field)
         images: {
             type: [String],          // Array of strings (URLs of product images)
+            default: [],             // Default to an empty array if no images provided
         },
         
         // URL for a thumbnail image of the product (optional field)
         thumbnail: {
             type: String,            // URL of the thumbnail image
+            default: "",             // Default to an empty string if no thumbnail provided
         },
         
         // Brand of the product (optional, can be null for albums)
