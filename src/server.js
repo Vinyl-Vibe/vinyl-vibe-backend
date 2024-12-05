@@ -8,7 +8,7 @@
 // - connections to file storage 
 
 const express = require("express");
-const { User } = require("./models/UserModel");
+const { User } = require("./users/UserModel");
 const { generateJWT, validateUserAuth } = require("./functions/jwtFunctions");
 const cors = require ("cors");
 

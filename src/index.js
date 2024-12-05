@@ -8,8 +8,7 @@ require("dotenv").config();
 
 // Server is configured in this file, not in index.js: 
 const {app} = require("./server.js");
-// const { dbConnect } = require("./utils/database.js");
-const { dbConnect } = require("./functions/dbFunctions.js");
+const { dbConnect } = require("./utils/database.js");
 
 // Get the PORT value from environment variables
 const PORT = process.env.PORT || 8080;
