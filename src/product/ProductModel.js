@@ -12,12 +12,6 @@ const ProductSchema = new mongoose.Schema(
             trim: true,              // Automatically trim spaces from the beginning and end
         },
         
-        // SKU (Stock Keeping Unit) for unique product identification
-        sku: {
-            type: Number,
-            unique: true,            // Ensures the SKU is unique for each product
-        },
-        
         // General description of the product (optional field)
         description: {
             type: String,
@@ -70,6 +64,12 @@ const ProductSchema = new mongoose.Schema(
             type: String,            // URL of the thumbnail image
         },
         
+        // Brand of the product (optional, can be null for albums)
+        brand: {
+            type: String,            // Brand name (e.g., brand name for turntables or speakers)
+            default: null,           // Default to null if no brand is provided (e.g., for albums)
+        },
+
         // Timestamp for when the product was created
         createdAt: {
             type: Date,
