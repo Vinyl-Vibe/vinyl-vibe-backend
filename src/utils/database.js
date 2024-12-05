@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const { ProductModel } = require("../models/ProductModel");
 
 
 // Function to connect to whatever DB our environment variable says to connect to
