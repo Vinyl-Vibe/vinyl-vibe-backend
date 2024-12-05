@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const UserController = require('./UserController')
 const { validateUserAuth } = require('./UserMiddleware')
+const { requireAdmin, requireOwnership } = require('../utils/middleware/roleMiddleware')
 
 /**
  * User routes handle user data management
@@ -16,10 +17,10 @@ const { validateUserAuth } = require('./UserMiddleware')
 // Apply middleware to all routes in this router
 router.use(validateUserAuth)
 
-// Route definitions with comments about access control
-router.get('/', UserController.getAllUsers)           // Admin only
-router.get('/:userId', UserController.getUserById)    // Own user or admin
-router.put('/:userId', UserController.updateUser)     // Own user or admin
-router.delete('/:userId', UserController.deleteUser)  // Own user or admin
+// Route definitions with role-based access control
+router.get('/', requireAdmin, UserController.getAllUsers)           // Admin only
+router.get('/:userId', requireOwnership(), UserController.getUserById)    // Own user or admin
+router.put('/:userId', requireOwnership(), UserController.updateUser)     // Own user or admin
+router.delete('/:userId', requireOwnership(), UserController.deleteUser)  // Own user or admin
 
 module.exports = router
