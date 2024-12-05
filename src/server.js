@@ -22,7 +22,7 @@ let corsOptions = {
 	origin: ["http://localhost:8080", "http://localhost:5173", "https://vinylvibe.live"],
 	optionsSuccessStatus: 200
 };
-app.use (cors(corsOptions));
+app.use(cors(corsOptions));
 
 // Server app configuration goes here
 // middleware, routes, etc 
