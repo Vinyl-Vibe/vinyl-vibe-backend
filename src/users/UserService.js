@@ -23,10 +23,45 @@ const UserService = {
 		}
 	},
 
-	async getAllUsers() {
-		// Exclude password from results
-		// Why? Security best practice - passwords should never leave the server
-		return User.find({}).select("-password");
+	async getAllUsers(filters = {}, sort = {}) {
+		try {
+			// Build query
+			let query = User.find();
+
+			// Apply filters
+			if (filters.search) {
+				// Search in email field
+				// Why use regex? Allows partial matches
+				// Why case-insensitive? Better user experience
+				query = query.where('email', new RegExp(filters.search, 'i'));
+			}
+
+			if (filters.role) {
+				query = query.where('role', filters.role);
+			}
+
+			if (filters.start_date) {
+				query = query.where('createdAt').gte(new Date(filters.start_date));
+			}
+
+			if (filters.end_date) {
+				query = query.where('createdAt').lte(new Date(filters.end_date));
+			}
+
+			// Apply sorting
+			// Why use -1/1? MongoDB sort syntax
+			// Why default to email? Consistent ordering
+			const sortField = sort.field || 'email';
+			const sortOrder = sort.order === 'desc' ? -1 : 1;
+			query = query.sort({ [sortField]: sortOrder });
+
+			// Exclude password from results
+			query = query.select('-password');
+
+			return await query.exec();
+		} catch (error) {
+			throw new AppError('Error retrieving users', 500);
+		}
 	},
 
 	async getUserById(userId) {

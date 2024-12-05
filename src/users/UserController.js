@@ -13,7 +13,46 @@ const UserController = {
 	// GET /users - Get all users (admin only)
 	async getAllUsers(req, res, next) {
 		try {
-			const users = await UserService.getAllUsers();
+			// Extract query parameters
+			// Why destructure with defaults?
+			// - Ensures consistent behavior
+			// - Prevents undefined errors
+			const {
+				search,          // Search in email
+				role,           // Filter by role
+				start_date,     // Filter by creation date range
+				end_date,
+				sort_by = 'email', // Sort field
+				order = 'asc'      // Sort order
+			} = req.query;
+
+			// Build filters object
+			// Why separate object?
+			// - Cleaner code
+			// - Easier to modify filters
+			// - More maintainable
+			const filters = {};
+			if (search) filters.search = search;
+			if (role) filters.role = role;
+			if (start_date) filters.start_date = start_date;
+			if (end_date) filters.end_date = end_date;
+
+			// Build sort object
+			const sort = {
+				field: sort_by,
+				order: order.toLowerCase()
+			};
+
+			// Validate sort field
+			// Why validate?
+			// - Prevent invalid database queries
+			// - Security: prevent NoSQL injection
+			const allowedSortFields = ['email', 'role', 'createdAt'];
+			if (!allowedSortFields.includes(sort.field)) {
+				throw new AppError(`Invalid sort field. Allowed fields: ${allowedSortFields.join(', ')}`, 400);
+			}
+
+			const users = await UserService.getAllUsers(filters, sort);
 			res.json(users);
 		} catch (error) {
 			next(error);
