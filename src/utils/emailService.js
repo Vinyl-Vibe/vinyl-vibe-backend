@@ -1,4 +1,5 @@
 const { Resend } = require('resend')
+const { AppError } = require('./middleware/errorMiddleware')
 
 /**
  * Email service using Resend
@@ -30,7 +31,7 @@ const EmailService = {
       })
     } catch (error) {
       console.error('Email send error:', error)
-      throw new Error('Failed to send password reset email')
+      throw new AppError('Failed to send password reset email', 500)
     }
   }
 }

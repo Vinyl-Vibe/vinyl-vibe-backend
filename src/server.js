@@ -11,6 +11,7 @@ const express = require("express");
 const corsMiddleware = require("./utils/middleware/corsMiddleware");
 const authRoutes = require("./auth/AuthRoutes");
 const userRoutes = require("./users/UserRoutes");
+const { errorHandler } = require("./utils/middleware/errorMiddleware");
 
 /**
  * Main Express application setup
@@ -30,11 +31,15 @@ app.use(express.json()); // Parse JSON request bodies
  * Why this order?
  * 1. CORS first - Must send CORS headers before any errors
  * 2. Body parsing - Need request body for most routes
- * 3. Routes last - Process the actual request
+ * 3. Routes - Process the actual request
+ * 4. Error handling - Must be last to catch all errors
  */
 app.use(corsMiddleware);
-app.use("/auth", authRoutes); // Auth routes don't need /api prefix
-app.use("/users", userRoutes); // User management routes
+app.use("/auth", authRoutes);
+app.use("/users", userRoutes);
+
+// Error handling middleware - must be last
+app.use(errorHandler);
 
 module.exports = {
 	app,

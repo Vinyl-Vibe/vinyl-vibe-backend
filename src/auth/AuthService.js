@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const UserService = require("../users/UserService");
 const crypto = require('crypto')
 const EmailService = require('../utils/emailService')
+const { AppError } = require('../utils/middleware/errorMiddleware')
 
 /**
  * AuthService handles business logic for authentication
@@ -14,28 +15,33 @@ const EmailService = require('../utils/emailService')
  */
 const AuthService = {
 	async generateToken(user) {
-		// Create JWT with user info and roles
-		// We include isAdmin flag directly in token for easy access
-		// expiresIn ensures tokens must be refreshed periodically
-		return jwt.sign(
-			{
-				userId: user._id,
-				email: user.email,
-				role: user.role,
-				isAdmin: user.role === "admin",
-			},
-			process.env.JWT_SECRET,
-			{ expiresIn: "7d" }
-		);
+		try {
+			return jwt.sign(
+				{
+					userId: user._id,
+					email: user.email,
+					role: user.role,
+					isAdmin: user.role === "admin",
+				},
+				process.env.JWT_SECRET,
+				{ expiresIn: "7d" }
+			);
+		} catch (error) {
+			throw new AppError('Error generating token', 500);
+		}
 	},
 
 	async validateToken(token) {
 		try {
-			// jwt.verify both checks signature and decodes token
-			// If token is invalid or expired, it throws an error
 			return jwt.verify(token, process.env.JWT_SECRET);
 		} catch (error) {
-			throw new Error("Invalid token");
+			if (error.name === 'JsonWebTokenError') {
+				throw new AppError('Invalid token', 401);
+			}
+			if (error.name === 'TokenExpiredError') {
+				throw new AppError('Token has expired', 401);
+			}
+			throw new AppError('Token validation error', 401);
 		}
 	},
 
@@ -44,14 +50,14 @@ const AuthService = {
 		// This is a security best practice to prevent user enumeration
 		const user = await UserService.findUserByEmail(email);
 		if (!user) {
-			throw new Error("User not found");
+			throw new AppError("Invalid credentials", 401);
 		}
 
 		// Password comparison is handled by UserModel method
 		// This keeps password comparison logic with the User model
 		const isValidPassword = await user.comparePassword(password);
 		if (!isValidPassword) {
-			throw new Error("Invalid password");
+			throw new AppError("Invalid credentials", 401);
 		}
 
 		const token = await this.generateToken(user);
@@ -110,7 +116,7 @@ const AuthService = {
 		})
 
 		if (!user) {
-			throw new Error('Invalid or expired reset token')
+			throw new AppError('Invalid or expired reset token', 401);
 		}
 
 		// Update password and clear reset token

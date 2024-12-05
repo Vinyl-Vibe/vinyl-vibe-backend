@@ -1,4 +1,5 @@
 const UserService = require("./UserService");
+const { AppError } = require('../utils/middleware/errorMiddleware');
 
 /**
  * UserController handles HTTP layer for user management
@@ -10,54 +11,54 @@ const UserService = require("./UserService");
  */
 const UserController = {
 	// GET /users - Get all users (admin only)
-	async getAllUsers(req, res) {
+	async getAllUsers(req, res, next) {
 		try {
 			// Admin-only endpoint
 			// Why check role here instead of middleware?
 			// - More specific error message
 			// - Role check is specific to this route
 			if (req.user.role !== "admin") {
-				return res.status(403).json({ error: "Admin access required" });
+				throw new AppError('Admin access required', 403);
 			}
 
 			const users = await UserService.getAllUsers();
 			res.json(users);
 		} catch (error) {
-			res.status(500).json({ error: error.message });
+			next(error);
 		}
 	},
 
 	// GET /users/:userId - Get specific user
-	async getUserById(req, res) {
+	async getUserById(req, res, next) {
 		try {
 			const { userId } = req.params;
 
 			// Users can only access their own data unless admin
 			// This implements principle of least privilege
 			if (req.user.role !== "admin" && req.user.userId !== userId) {
-				return res.status(403).json({ error: "Unauthorised access" });
+				throw new AppError('Unauthorised access', 403);
 			}
 
 			const user = await UserService.getUserById(userId);
 			if (!user) {
-				return res.status(404).json({ error: "User not found" });
+				throw new AppError('User not found', 404);
 			}
 
 			res.json(user);
 		} catch (error) {
-			res.status(500).json({ error: error.message });
+			next(error);
 		}
 	},
 
 	// PUT /users/:userId - Update user
-	async updateUser(req, res) {
+	async updateUser(req, res, next) {
 		try {
 			const { userId } = req.params;
 			const updates = req.body;
 
 			// Same access control as getUserById
 			if (req.user.role !== "admin" && req.user.userId !== userId) {
-				return res.status(403).json({ error: "Unauthorised access" });
+				throw new AppError('Unauthorised access', 403);
 			}
 
 			// Non-admins cannot change roles
@@ -70,34 +71,34 @@ const UserController = {
 
 			const updatedUser = await UserService.updateUser(userId, updates);
 			if (!updatedUser) {
-				return res.status(404).json({ error: "User not found" });
+				throw new AppError('User not found', 404);
 			}
 
 			res.json(updatedUser);
 		} catch (error) {
-			res.status(500).json({ error: error.message });
+			next(error);
 		}
 	},
 
 	// DELETE /users/:userId - Delete user
-	async deleteUser(req, res) {
+	async deleteUser(req, res, next) {
 		try {
 			const { userId } = req.params;
 
 			// Same access control pattern
 			if (req.user.role !== "admin" && req.user.userId !== userId) {
-				return res.status(403).json({ error: "Unauthorised access" });
+				throw new AppError('Unauthorised access', 403);
 			}
 
 			const deletedUser = await UserService.deleteUser(userId);
 			if (!deletedUser) {
-				return res.status(404).json({ error: "User not found" });
+				throw new AppError('User not found', 404);
 			}
 
 			// 204 indicates successful deletion with no content returned
 			res.status(204).send();
 		} catch (error) {
-			res.status(500).json({ error: error.message });
+			next(error);
 		}
 	},
 };

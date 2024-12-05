@@ -1,4 +1,5 @@
 const { User } = require("./UserModel");
+const { AppError } = require('../utils/middleware/errorMiddleware');
 
 /**
  * UserService handles business logic for user operations
@@ -11,17 +12,14 @@ const { User } = require("./UserModel");
 const UserService = {
 	async createUser({ email, password }) {
 		try {
-			// Check for existing user first
-			// Why? Prevents duplicate users and provides better error message
 			const existingUser = await User.findOne({ email });
 			if (existingUser) {
-				throw new Error("User already exists");
+				throw new AppError('User already exists', 400);
 			}
-
-			// Password hashing handled by UserModel pre-save hook
 			return await User.create({ email, password });
 		} catch (error) {
-			throw error;
+			if (error.isOperational) throw error;
+			throw new AppError('Error creating user', 500);
 		}
 	},
 

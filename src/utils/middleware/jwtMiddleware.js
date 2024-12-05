@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const { AppError } = require('./errorMiddleware');
 
 /**
  * JWT (JSON Web Token) handling middleware
@@ -53,7 +54,7 @@ function decodeJWT(tokenToDecode) {
 	try {
 		return jwt.verify(tokenToDecode, jwtSecretKey);
 	} catch (err) {
-		throw new Error("Invalid or expired token");
+		throw new AppError("Invalid or expired token", 401);
 	}
 }
 
@@ -66,29 +67,19 @@ function decodeJWT(tokenToDecode) {
  * - Supports multiple auth schemes
  */
 function validateJWT(req, res, next) {
-	const authHeader = req.headers.authorization;
-
-	// Check for Bearer token
-	if (!authHeader || !authHeader.startsWith("Bearer ")) {
-		return res
-			.status(403)
-			.json({ message: "Authentication token missing or invalid" });
-	}
-
-	// Extract token from header
-	const token = authHeader.split(" ")[1];
-
 	try {
-		// Verify and attach user data to request
-		// Why attach to request?
-		// - Makes user data available to route handlers
-		// - Avoids repeated token decoding
-		// - Standard Express pattern
+		const authHeader = req.headers.authorization;
+
+		if (!authHeader || !authHeader.startsWith("Bearer ")) {
+			throw new AppError("Authentication token missing or invalid", 401);
+		}
+
+		const token = authHeader.split(" ")[1];
 		const decoded = decodeJWT(token);
 		req.user = decoded;
 		next();
-	} catch (err) {
-		return res.status(403).json({ message: "Invalid or expired token" });
+	} catch (error) {
+		next(error);
 	}
 }
 
