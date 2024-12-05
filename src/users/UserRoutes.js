@@ -1,35 +1,25 @@
-// Auth Routes
-app.post("/signup", async (request, response) => {
-	// check that a username and password are provided in request.body
-	let username = request.body.username;
-	let password = request.body.password;
+const express = require('express')
+const router = express.Router()
+const UserController = require('./UserController')
+const { validateUserAuth } = require('./UserMiddleware')
 
-	if (!username || !password) {
-		response.status(400).json({
-			message:"Incorrect or missing sign-up credentials provided."
-		})
-	}
+/**
+ * User routes handle user data management
+ * 
+ * Why use Router?
+ * - Modular routing
+ * - Easier to apply middleware to group of routes
+ * - Better code organization
+ */
 
-	// make a user in the DB using the username an password
-	let newUser = await User.create({username: username, password: password});
+// All user routes require authentication
+// Apply middleware to all routes in this router
+router.use(validateUserAuth)
 
-	// make a JWT based on the username and userID
-	let newJwt = generateJWT(newUser.id, newUser.username);
+// Route definitions with comments about access control
+router.get('/', UserController.getAllUsers)           // Admin only
+router.get('/:userId', UserController.getUserById)    // Own user or admin
+router.put('/:userId', UserController.updateUser)     // Own user or admin
+router.delete('/:userId', UserController.deleteUser)  // Own user or admin
 
-	// return the JWT
-	response.json({
-		jwt: newJwt,
-		user: {
-			id: newUser.id,
-			username: newUser.username
-		}
-	});
-});
-
-// // Export the app so that other files can control when the server
-// // starts and stops 
-app.get("/protectedRoute", validateUserAuth, (request, response) => {
-	response.json({
-		message:"You can see protected content because you're signed in!"
-	})
-})
+module.exports = router
