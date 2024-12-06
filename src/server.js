@@ -1,6 +1,6 @@
 // Import required modules
 const express = require("express");
-const productRoutes = require("./routes/ProductRoutes"); // Import your product routes
+const productRoutes = require("./product/ProductRoutes"); // Import your product routes
 
 // Initialize Express app
 const app = express();
