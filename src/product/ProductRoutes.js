@@ -1,42 +1,38 @@
-
 // Importing necessary modules
 const express = require("express");
-const { 
-    createProduct, 
-    getAllProducts, 
-    getProductById, 
-    updateProduct, 
-    deleteProduct 
+const {
+	createProduct,
+	getAllProducts,
+	getProductById,
+	updateProduct,
+	deleteProduct,
 } = require("../product/ProductController");
 
 // Initialize the router
 const router = express.Router();
 
 // Route to create a new product
-// POST /api/products
-router.post("/products", createProduct);
+// POST /products
+router.post("/", createProduct);
 
 // Route to get all products
-// GET /api/products
-router.get("/products", getAllProducts);
+// GET /products
+router.get("/", getAllProducts);
 
 // Route to get a single product by ID
-// GET /api/products/:id
-router.get("/products/:id", getProductById);
+// GET /products/:id
+router.get("/:id", getProductById);
 
 // Route to update a product by ID
-// PUT /api/products/:id
-router.put("/products/:id", updateProduct);
+// PUT /products/:id
+router.put("/:id", updateProduct);
 
 // Route to delete a product by ID
-// DELETE /api/products/:id
-router.delete("/products/:id", deleteProduct);
+// DELETE /products/:id
+router.delete("/:id", deleteProduct);
 
 // Export the router for use in the application
 module.exports = router;
-
-
-
 
 // Model: Defines the schema (structure) for data.
 // Service: Contains logic for manipulating data (CRUD operations).
