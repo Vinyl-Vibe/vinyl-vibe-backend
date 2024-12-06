@@ -1,24 +1,42 @@
-// Purpose: 
-// First point of entry 
-// Initiate the server 
+// Purpose:
+// First point of entry
+// Initiate the server
 // Get the port
-// Tell the server to listen to web traffic 
+// Tell the server to listen to web traffic
 
 require("dotenv").config();
-console.log("Loaded DATABASE_URL:", process.env.DATABASE_URL);
 
-// Server is configured in this file, not in index.js: 
-const {app} = require("./server.js");
+const { app } = require("./server.js");
 const { dbConnect } = require("./utils/database.js");
 
+/**
+ * Server startup sequence
+ *
+ * Why this order?
+ * 1. Load environment variables first - needed for all config
+ * 2. Import configured app - avoid circular dependencies
+ * 3. Connect to database before listening - ensure DB is ready
+ * 4. Start listening only after all setup is complete
+ */
+
 // Get the PORT value from environment variables
+// Why use environment variable?
+// - Different ports for different environments
+// - Hosting platforms often assign their own port
+// - Avoid port conflicts in development
 const PORT = process.env.PORT || 8080;
 
-// app.listen(port, callback)
+// Start server and connect to database
+// Why async IIFE?
+// - Ensures database connection before accepting requests
+// - Proper error handling during startup
+// - Clean shutdown if startup fails
 app.listen(PORT, async () => {
-
-    await dbConnect();
-
-	// Server is running if we reach this point in the code!
-	console.log("Server is running on port " + PORT);
+	try {
+		await dbConnect();
+		console.log("Server is running on port " + PORT);
+	} catch (error) {
+		console.error("Failed to start server:", error);
+		process.exit(1); // Exit with error code
+	}
 });
