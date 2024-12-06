@@ -1,30 +1,18 @@
-// Purpose:
-// Configure the server, eg.
-// - routes
-// - middleware 
-// - CORS 
-// - debug logger setups
-// - connections to databases
-// - connections to file storage 
-
+// Import required modules
 const express = require("express");
+const productRoutes = require("./routes/ProductRoutes"); // Import your product routes
+
+// Initialize Express app
 const app = express();
 
-// Server app configuration goes here
-// middleware, routes, etc 
+// Middleware to parse JSON payloads
+app.use(express.json());
 
-// app.verb(path, callback);
-app.get("/", (request, response) => {
-	response.json({
-		message:"Hello world!"
-	});
-});
+// Register product routes under "/api" name
+app.use("/api", productRoutes);
 
-
-// // Server app configuration is finished by this point 
-
-// // Export the app so that other files can control when the server
-// // starts and stops 
+// Export the app so that other files can control when the server
+// starts and stops
 module.exports = {
-	app
+  app,
 };
