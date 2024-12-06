@@ -1,0 +1,32 @@
+{
+  "version": "1",
+  "name": "Vinyl Vibe API Tests",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ],
+  "sequences": [
+    {
+      "name": "Auth Flow",
+      "requests": [
+        "auth/register",
+        "auth/login",
+        "auth/forgot-password",
+        "auth/reset-password",
+        "auth/refresh-token",
+        "auth/logout"
+      ]
+    },
+    {
+      "name": "User Management",
+      "requests": [
+        "users/list-users",
+        "users/get-user",
+        "users/update-user",
+        "users/delete-user",
+        "users/get-profile"
+      ]
+    }
+  ]
+}
