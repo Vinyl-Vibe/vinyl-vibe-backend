@@ -14,7 +14,7 @@ const { AppError } = require('../utils/middleware/errorMiddleware');
 const AuthController = {
 	async register(req, res, next) {
 		try {
-			const { email, password } = req.body;
+			const { email, password, role } = req.body;
 
 			// Early validation pattern - check requirements before doing any work
 			// This saves database calls and improves response time for invalid requests
@@ -24,7 +24,7 @@ const AuthController = {
 
 			// Create user first, then generate token
 			// Why this order? If token generation fails, we don't want an unverified user in our DB
-			const newUser = await UserService.createUser({ email, password });
+			const newUser = await UserService.createUser({ email, password, role });
 			const token = await AuthService.generateToken(newUser);
 
 			// 201 status indicates resource creation
