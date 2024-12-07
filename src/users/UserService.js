@@ -10,13 +10,13 @@ const { AppError } = require('../utils/middleware/errorMiddleware');
  * - Easier to test business logic
  */
 const UserService = {
-	async createUser({ email, password }) {
+	async createUser({ email, password, role }) {
 		try {
 			const existingUser = await User.findOne({ email });
 			if (existingUser) {
 				throw new AppError('User already exists', 400);
 			}
-			return await User.create({ email, password });
+			return await User.create({ email, password, role });
 		} catch (error) {
 			if (error.isOperational) throw error;
 			throw new AppError('Error creating user', 500);
