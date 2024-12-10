@@ -1,6 +1,6 @@
 // Importing the ProductModel from the ProductModel.js
 const { ProductModel } = require("../product/ProductModel");
-const ProductService = require("../product/ProductService");
+const ProductService = require("./ProductService");
 
 // Create a new product
 const createProduct = async (request, response) => {
