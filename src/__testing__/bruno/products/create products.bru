@@ -1,0 +1,20 @@
+meta {
+  name: create products
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8080/products
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Abbey Road",
+    "price": 42.50,
+    "type": "vinyl",
+    "stock": 15
+  }
+}
