@@ -1,9 +1,10 @@
 // Importing the ProductModel from the ProductModel.js
 const { ProductModel } = require("./ProductModel");
 const ProductService = require("./ProductService");
+const { AppError } = require("../utils/middleware/errorMiddleware");
 
 // Create a new product
-const createProduct = async (request, response) => {
+const createProduct = async (request, response, next) => {
     try {
         const productData = request.body;
         const product = await ProductService.createProduct(productData);
@@ -15,17 +16,13 @@ const createProduct = async (request, response) => {
             product,
         });
     } catch (error) {
-        // Catch and handle errors
-        console.error(error);
-        return response.status(500).json({
-            success: false,
-            message: "Server error. Unable to create product.",
-        });
+        // Use next(error) to pass to error handling middleware
+        next(new AppError("Failed to create product", 500));
     }
 };
 
 // Get all products (with optional filter by type)
-const getAllProducts = async (request, response) => {
+const getAllProducts = async (request, response, next) => {
     try {
         // Pass query parameters to the service
         const products = await ProductService.getAllProducts(request.query);
@@ -35,29 +32,22 @@ const getAllProducts = async (request, response) => {
             products,
         });
     } catch (error) {
-        console.error(error);
-        return response.status(500).json({
-            success: false,
-            message: "Server error. Unable to retrieve products.",
-        });
+        next(new AppError("Failed to retrieve products", 500));
     }
 };
 
 // Get a single product by ID
-const getProductById = async (request, response) => {
+const getProductById = async (request, response, next) => {
     try {
         // Get the product ID from the URL parameters
         const { id } = request.params;
 
         // Fetch the product from the database
-        const product = await ProductModel.findById(id);
+        const product = await ProductService.getProductById(id);
 
         // If the product doesn't exist, send a 404 response
         if (!product) {
-            return response.status(404).json({
-                success: false,
-                message: "Product not found",
-            });
+            return next(new AppError("Product not found", 404));
         }
 
         // Return the found product
@@ -66,84 +56,87 @@ const getProductById = async (request, response) => {
             product,
         });
     } catch (error) {
-        // Handle any errors, such as invalid ID format
-        console.error(error);
-        return response.status(500).json({
-            success: false,
-            message: "Server error. Unable to retrieve product.",
-        });
+        next(new AppError("Failed to retrieve product", 500));
     }
 };
 
-// Update a product by ID
-const updateProduct = async (request, response) => {
+/**
+ * Update a product by ID
+ * Why separate update logic in controller/service?
+ * - Controller handles HTTP concerns (request/response)
+ * - Service handles business logic and database operations
+ * - Keeps code modular and testable
+ */
+const updateProduct = async (request, response, next) => {
     try {
-        // Get the product ID from the URL parameters
-        const { id } = request.params;
-
-        // Get the updated data from the request body
-        const updates = request.body;
-
-        // Find the product by ID and update it
-        const product = await ProductModel.findByIdAndUpdate(id, updates, {
-            new: true,
-        });
-
-        // If the product doesn't exist, send a 404 response
+        const { id } = request.params
+        const updates = request.body
+        
+        // Why await here instead of .then()?
+        // - Cleaner error handling with try/catch
+        // - More readable synchronous-style code
+        // - Easier to debug with stack traces
+        const product = await ProductService.updateProduct(id, updates)
+        
+        // Why check for product existence here AND in service?
+        // - Service ensures data integrity
+        // - Controller ensures proper HTTP response
+        // - Defence in depth principle
         if (!product) {
-            return response.status(404).json({
-                success: false,
-                message: "Product not found",
-            });
+            return next(new AppError('Product not found', 404))
         }
 
-        // Return the updated product
+        // Why return a success message AND the updated product?
+        // - Message provides user feedback
+        // - Updated product lets client update UI without refetch
+        // - Follows REST best practices
         return response.status(200).json({
             success: true,
-            message: "Product updated successfully",
-            product,
-        });
+            message: 'Product updated successfully',
+            product
+        })
     } catch (error) {
-        // Handle any errors
-        console.error(error);
-        return response.status(500).json({
-            success: false,
-            message: "Server error. Unable to update product.",
-        });
+        // Why use AppError with next()?
+        // - Consistent error format across API
+        // - Centralised error handling
+        // - Proper error logging
+        next(new AppError('Failed to update product', 500))
     }
-};
+}
 
-// Delete a product by ID
-const deleteProduct = async (request, response) => {
+/**
+ * Delete a product by ID
+ * Why soft delete not implemented?
+ * - Business requirement for permanent deletion
+ * - No audit requirement for deleted products
+ * - Simplifies data management
+ */
+const deleteProduct = async (request, response, next) => {
     try {
-        // Get the product ID from the URL parameters
-        const { id } = request.params;
-
-        // Delete the product by its ID
-        const product = await ProductModel.findByIdAndDelete(id);
-
-        // If the product doesn't exist, send a 404 response
+        const { id } = request.params
+        
+        // Why use service layer for deletion?
+        // - Consistent business logic
+        // - Future-proof for soft delete implementation
+        // - Centralised database operations
+        const product = await ProductService.deleteProduct(id)
+        
         if (!product) {
-            return response.status(404).json({
-                success: false,
-                message: "Product not found",
-            });
+            return next(new AppError('Product not found', 404))
         }
 
-        // Return a success message
+        // Why not return deleted product?
+        // - No need for deleted data on client
+        // - Reduces response payload
+        // - Clear indication of successful deletion
         return response.status(200).json({
             success: true,
-            message: "Product deleted successfully",
-        });
+            message: 'Product deleted successfully'
+        })
     } catch (error) {
-        // Handle any errors
-        console.error(error);
-        return response.status(500).json({
-            success: false,
-            message: "Server error. Unable to delete product.",
-        });
+        next(new AppError('Failed to delete product', 500))
     }
-};
+}
 
 module.exports = {
     createProduct,

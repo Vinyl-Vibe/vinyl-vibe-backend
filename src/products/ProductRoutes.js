@@ -7,29 +7,23 @@ const {
 	updateProduct,
 	deleteProduct,
 } = require("./ProductController");
+const { validateJWT } = require('../utils/middleware/jwtMiddleware')
+const { requireAdmin } = require('../utils/middleware/roleMiddleware')
 
 // Initialize the router
 const router = express.Router();
 
-// Route to create a new product
-// POST /products
-router.post("/", createProduct);
+// Public routes
+router.get('/', getAllProducts) // Allow public access to view products
+router.get('/:id', getProductById) // Allow public access to view single product
 
-// Route to get all products
-// GET /products
-router.get("/", getAllProducts);
-
-// Route to get a single product by ID
-// GET /products/:id
-router.get("/:id", getProductById);
-
-// Route to update a product by ID
-// PUT /products/:id
-router.put("/:id", updateProduct);
-
-// Route to delete a product by ID
-// DELETE /products/:id
-router.delete("/:id", deleteProduct);
+// Protected admin-only routes
+// Why both validateJWT and requireAdmin?
+// - validateJWT verifies the token and adds user to request
+// - requireAdmin checks if the user has admin role
+router.post('/', validateJWT, requireAdmin, createProduct)
+router.put('/:id', validateJWT, requireAdmin, updateProduct)
+router.delete('/:id', validateJWT, requireAdmin, deleteProduct)
 
 // Export the router for use in the application
 module.exports = router;

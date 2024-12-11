@@ -1,5 +1,6 @@
 // Import the ProductModel to interact with the MongoDB database
 const { ProductModel } = require("./ProductModel");
+const { AppError } = require("../utils/middleware/errorMiddleware");
 
 // Mongoose Methods; save(), find(), findById(), findByIdAndUpdate()
 // and findByIdAndDelete() are used to interact with the database.
@@ -14,7 +15,7 @@ const createProduct = async (productData) => {
         return await newProduct.save();
     } catch (error) {
         // Throw an error if something goes wrong
-        throw new Error(`Error creating product: ${error.message}`);
+        throw new AppError(`Failed to create product: ${error.message}`, 500);
     }
 };
 
@@ -124,43 +125,70 @@ const getProductById = async (productId) => {
     }
 };
 
-// Service function to update a product by its ID.
-
+/**
+ * Update product in database
+ * Why use findByIdAndUpdate?
+ * - Atomic operation prevents race conditions
+ * - Returns updated document
+ * - Handles validation automatically
+ */
 const updateProduct = async (productId, productData) => {
     try {
-        // Use Mongoose's `findByIdAndUpdate` method to update the product
+        // Why these options?
+        // new: true - returns updated document instead of old one
+        // runValidators: true - ensures updates meet schema requirements
         const updatedProduct = await ProductModel.findByIdAndUpdate(
-            productId, // The ID of the product to update
-            productData, // The new data for the product
-            { new: true, runValidators: true } // Return the updated document and validate new data
+            productId,
+            productData,
+            { new: true, runValidators: true }
         );
-        // If no product is found, throw a custom error
+
+        // Why throw error instead of returning null?
+        // - Forces error handling
+        // - Consistent error patterns
+        // - Clear indication of failure reason
         if (!updatedProduct) {
-            throw new Error("Product not found");
+            throw new AppError("Product not found", 404);
         }
-        // Return the updated product
+
         return updatedProduct;
     } catch (error) {
-        // Throw an error if something goes wrong
-        throw new Error(`Error updating product: ${error.message}`);
+        // Why check error instance?
+        // - Preserve original error types
+        // - Maintain error status codes
+        // - Prevent double-wrapping errors
+        if (error instanceof AppError) throw error;
+        throw new AppError(`Error updating product: ${error.message}`, 500);
     }
 };
 
-// Service function to delete a product by its ID.
-
+/**
+ * Delete product from database
+ * Why use findByIdAndDelete?
+ * - Atomic operation
+ * - Returns deleted document
+ * - Handles ObjectId casting
+ */
 const deleteProduct = async (productId) => {
     try {
-        // Use Mongoose's `findByIdAndDelete` method to delete the product
+        // Why not use deleteOne()?
+        // - Need to know if product existed
+        // - Want to return deleted product if needed
+        // - Consistent with other finder methods
         const deletedProduct = await ProductModel.findByIdAndDelete(productId);
-        // If no product is found, throw a custom error
+
         if (!deletedProduct) {
-            throw new Error("Product not found");
+            throw new AppError("Product not found", 404);
         }
-        // Return the deleted product
+
         return deletedProduct;
     } catch (error) {
-        // Throw an error if something goes wrong
-        throw new Error(`Error deleting product: ${error.message}`);
+        // Why separate error handling?
+        // - Preserve custom error types
+        // - Add context to database errors
+        // - Consistent error format
+        if (error instanceof AppError) throw error;
+        throw new AppError(`Error deleting product: ${error.message}`, 500);
     }
 };
 
