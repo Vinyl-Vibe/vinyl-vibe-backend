@@ -48,4 +48,13 @@ router.delete("/:itemId", validateUserAuth, removeItem);
 // GET /cart?user-id=<userId>
 router.get("/filter", validateUserAuth, getFilteredCart);
 
+// Export the router for use in the application
 module.exports = router;
+
+/**
+ * Project Structure Overview:
+ * - Model: Defines the schema (structure) for data in the database.
+ * - Service: Contains logic for manipulating data (CRUD operations).
+ * - Controller: Handles HTTP requests, delegates logic to the service, and sends back responses.
+ * - Routes: Maps HTTP requests to controller functions.
+ */
