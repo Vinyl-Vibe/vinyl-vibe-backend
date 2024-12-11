@@ -1,0 +1,22 @@
+meta {
+  name: Update Cart Item Quantity
+  type: http
+  seq: 3
+}
+
+put {
+  url: http://localhost:8080/cart/{{itemId}}
+  auth: inherit
+  body: json {
+    "quantity": 3
+  }
+}
+
+vars {
+  itemId: 65f2d123abc456def789012
+}
+
+docs {
+  title: Update Item Quantity
+  desc: Updates the quantity of an existing item in the cart
+} 
