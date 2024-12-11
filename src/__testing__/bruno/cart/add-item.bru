@@ -1,19 +1,18 @@
 meta {
-  name: Add Item to Cart
-  type: http
-  seq: 2
+    name: Add item to cart
+    type: http
+    seq: 2
 }
 
 post {
-  url: http://localhost:8080/cart
-  auth: inherit
-  body: json {
-    "productId": "65f2d123abc456def789012",
-    "quantity": 2
-  }
+    url: http://localhost:8080/cart
+    body: json
+    auth: inherit
 }
 
-docs {
-  title: Add Item to Cart
-  desc: Adds a new item to the user's cart or updates quantity if item exists
-} 
+body:json {
+    {
+        "productId": "67596bb44c8dcc755fd78974",
+        "quantity": 1
+    }
+}
