@@ -1,5 +1,6 @@
 const { generateJWT } = require('./AuthMiddleware')
 const UserService = require('../users/UserService');
+const { User } = require('../users/UserModel');
 const crypto = require('crypto')
 const EmailService = require('../utils/emailService')
 const { AppError } = require('../utils/middleware/errorMiddleware')
@@ -85,29 +86,45 @@ const AuthService = {
 	},
 
 	async resetPassword(token, newPassword) {
-		// Hash token for comparison
-		const hashedToken = crypto
-			.createHash('sha256')
-			.update(token)
-			.digest('hex')
+		try {
+			// Hash token for comparison
+			const hashedToken = crypto
+				.createHash('sha256')
+				.update(token)
+				.digest('hex')
 
-		// Find user with valid token
-		const user = await User.findOne({
-			resetPasswordToken: hashedToken,
-			resetPasswordExpires: { $gt: Date.now() }
-		})
+			console.log('Debug - Looking for token:', hashedToken);
 
-		if (!user) {
-			throw new AppError('Invalid or expired reset token', 401);
+			// Find user with valid token
+			const user = await User.findOne({
+				resetPasswordToken: hashedToken,
+				resetPasswordExpires: { $gt: Date.now() }
+			})
+
+			console.log('Debug - User found:', user ? 'Yes' : 'No');
+
+			if (!user) {
+				throw new AppError('Invalid or expired reset token', 401)
+			}
+
+			// Update password and clear reset token
+			user.password = newPassword
+			user.resetPasswordToken = undefined
+			user.resetPasswordExpires = undefined
+			
+			console.log('Debug - About to save user');
+			
+			// Save and return updated user
+			const savedUser = await user.save()
+			
+			console.log('Debug - User saved successfully');
+
+			return savedUser
+		} catch (error) {
+			console.error('Debug - Reset password error:', error);
+			if (error.isOperational) throw error
+			throw new AppError('Error resetting password', 500)
 		}
-
-		// Update password and clear reset token
-		user.password = newPassword
-		user.resetPasswordToken = undefined
-		user.resetPasswordExpires = undefined
-		await user.save() // This will trigger password hashing via pre-save hook
-
-		return user
 	},
 
 	async validateToken(token) {

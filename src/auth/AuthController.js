@@ -141,27 +141,41 @@ const AuthController = {
 
 	async resetPassword(req, res, next) {
 		try {
-			const { token, newPassword } = req.body;
+			// Accept either password or newPassword from request body
+			const { token, password, newPassword } = req.body;
+			const finalPassword = password || newPassword;
 
-			if (!token || !newPassword) {
-				throw new AppError('Token and new password are required', 400);
+			if (!token || !finalPassword) {
+				throw new AppError('Token and password are required', 400);
 			}
 
 			// Validate password requirements
-			// Why check length? Basic security requirement
-			// More complex validation should be moved to a validation middleware
-			if (newPassword.length < 8) {
+			if (finalPassword.length < 8) {
 				throw new AppError('Password must be at least 8 characters long', 400);
 			}
 
-			// Process password reset and generate new auth token
-			const user = await AuthService.resetPassword(token, newPassword);
-			const authToken = await AuthService.generateToken(user);
+			try {
+				// Process password reset and generate new auth token
+				const user = await AuthService.resetPassword(token, finalPassword);
+				const authToken = await AuthService.generateToken(user);
 
-			res.json({
-				message: 'Password successfully reset',
-				token: authToken
-			});
+				res.json({
+					status: 'success',
+					message: 'Password successfully reset',
+					token: authToken,
+					user: {
+						id: user._id,
+						email: user.email,
+						role: user.role
+					}
+				});
+			} catch (error) {
+				// Handle specific reset errors
+				if (error.message === 'Invalid or expired reset token') {
+					throw new AppError('Reset link has expired or is invalid. Please request a new password reset.', 400);
+				}
+				throw error;
+			}
 		} catch (error) {
 			next(error);
 		}
