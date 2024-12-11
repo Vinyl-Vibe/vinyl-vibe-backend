@@ -63,22 +63,7 @@ async function validateUserAuth(request, response, next) {
     }
 }
 
-// Admin check middleware
-const validateAdminAuth = async (request, response, next) => {
-    try {
-        await validateUserAuth(request, response, () => {
-            if (request.user.role !== "admin") {
-                throw new AppError("Admin access required", 403);
-            }
-            next();
-        });
-    } catch (error) {
-        next(error);
-    }
-};
-
 module.exports = {
     generateJWT,
-    validateUserAuth,
-    validateAdminAuth
+    validateUserAuth
 };
