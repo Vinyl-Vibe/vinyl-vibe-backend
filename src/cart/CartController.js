@@ -76,9 +76,53 @@ const addItem = async (req, res, next) => {
     }
 };
 
+/**
+ * Update the quantity of an item in the cart
+ * PUT /cart/:item-id
+ */
+
+const updateItemQuantity = async (req, res, next) => {
+    try {
+
+        // Extract the 'itemId' from the route parameters and the 'quantity' from the request body
+        const { itemId } = req.params;
+        const { quantity } = req.body;
+
+        // Validate the 'quantity' input
+        if (!quantity || quantity < 1) {
+
+            // Return a 400 Bad Request error when the quantity is missing or less than 1
+            return next(new AppError("Quantity must be at least 1", 400));
+        }
+
+        // Extracts the 'userId' validated and attached to req.user by 'authMiddleware.js'
+        const userId = req.user._id;
+
+        // Fetches the cart associated with the 'userId'
+        const cart = await CartService.getCartByUserId(userId);
+
+        // Handles the adding or updating of the quantity of the product in the cart
+        const updatedCart = await CartService.addOrUpdateProducts(cart, [
+            { productId: itemId, quantity },
+        ]);
+
+
+        // Sends a HTTP response staus code 200 when the request is successful
+        res.status(200).json({ 
+            status: "success", 
+            data: updatedCart,
+        });
+    
+    // Foreard any errors to the errorHandler middleware
+    } catch (error) {
+        next(error);
+    }
+};
+
 
 
 module.exports = {
     getCart,
     addItem,
+    updateItemQuantity
 }
