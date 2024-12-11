@@ -1,4 +1,5 @@
 const { CartModel } = require("./CartModel")
+const { ProductModel } = require("../products/ProductModel")
 const { AppError } = require("../utils/middleware/errorMiddleware")
 
 /**
@@ -56,6 +57,21 @@ const createCart = async (userId, products) => {
  */
 
 const addOrUpdateProducts = async (cart, products) => {
+    // Validate products exist before adding
+    for (const newProduct of products) {
+        const productExists = await ProductModel.findById(newProduct.productId);
+        if (!productExists) {
+            throw new AppError(`Product ${newProduct.productId} not found`, 404);
+        }
+        
+        // Check stock levels
+        if (productExists.stock < newProduct.quantity) {
+            throw new AppError(
+                `Insufficient stock for ${productExists.name}. Available: ${productExists.stock}`,
+                400
+            );
+        }
+    }
     
     // Iterates over the array of incoming products to update the cart
     for (const newProduct of products) {

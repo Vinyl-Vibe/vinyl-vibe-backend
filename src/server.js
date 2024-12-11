@@ -45,13 +45,6 @@ app.use("/products", productRoutes);
 // Error handling middleware - must be last
 app.use(errorHandler);
 
-const { generateJWT } = require("./utils/middleware/jwtMiddleware");
-
-app.get("/generate-token", (req, res) => {
-    const testToken = generateJWT("12345", "testUser", ["user"]);
-    res.status(200).json({ token: testToken });
-});
-
 module.exports = {
     app,
 };

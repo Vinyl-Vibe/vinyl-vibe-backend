@@ -11,7 +11,7 @@
 const { AppError } = require("../utils/middleware/errorMiddleware");
 const jwt = require("jsonwebtoken");
 const crypto = require('crypto');
-const User = require('../models/User');
+const { User } = require('../users/UserModel');
 
 // Get secret key from environment
 const JWT_SECRET = process.env.JWT_SECRET;

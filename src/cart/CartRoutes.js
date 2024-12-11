@@ -7,10 +7,20 @@ const {
     removeItem, 
     getFilteredCart 
 } = require("./CartController");
-const { validateUserAuth } = require("../utils/middleware/authMiddleware");
+const { validateUserAuth } = require("../auth/AuthMiddleware");
+const { requireOwnership } = require("../utils/middleware/roleMiddleware");
 
 // Initilaising the router
 const router = express.Router();
+
+/**
+ * Cart Routes
+ * Why use global middleware?
+ * - All cart operations require authentication
+ * - Prevents duplicate auth checks
+ * - Consistent auth behavior
+ */
+router.use(validateUserAuth);
 
 /**
  * Cart Routes
@@ -23,30 +33,25 @@ const router = express.Router();
  * 5. GET    /cart?user-id=<userId>    - Retrieve a cart filtered by user ID (search/filter)
  */
 
-/**
- * Middleware:
- * - `validateUserAuth`: Ensures the user is authenticated before accessing any cart routes.
- */
-
 // Retrieve the current cart for the authenticated user
 // GET /cart
-router.get("/", validateUserAuth, getCart);
+router.get("/", getCart);
 
 // Add a new item to the cart
 // POST /cart
-router.post("/", validateUserAuth, addItem);
+router.post("/", addItem);
 
 // Update the quantity of an item in the cart
 // PUT /cart/:itemId 
-router.put("/:itemId", validateUserAuth, updateItemQuantity);
+router.put("/:itemId", requireOwnership("userId"), updateItemQuantity);
 
 // Remove an item from the cart
 // DELETE /cart/:itemId
-router.delete("/:itemId", validateUserAuth, removeItem);
+router.delete("/:itemId", requireOwnership("userId"), removeItem);
 
 // Retrieve a cart filtered by user ID (query parameter)
 // GET /cart?user-id=<userId>
-router.get("/filter", validateUserAuth, getFilteredCart);
+router.get("/filter", requireOwnership("userId"), getFilteredCart);
 
 // Export the router for use in the application
 module.exports = router;
