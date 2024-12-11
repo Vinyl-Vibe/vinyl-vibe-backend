@@ -28,34 +28,21 @@ const createProduct = async (request, response) => {
 // Get all products (with optional filter by type)
 const getAllProducts = async (request, response) => {
 	try {
-		// Extract the 'type' query parameter from the request
-		const { type } = request.query;
-
-		// Create a filter object to pass to the `find` query
-		let filter = {};
-
-		// If a type is provided, add it to the filter
-		if (type) {
-			filter.type = type;
-		}
-
-		// Fetch products from the database, applying the filter if available
-		const products = await ProductModel.find(filter);
-
-		// Send back the list of products
-		return response.status(200).json({
-			success: true,
-			products,
-		});
+	  // Pass query parameters to the service
+	  const products = await ProductService.getAllProducts(request.query)
+  
+	  return response.status(200).json({
+		success: true,
+		products,
+	  })
 	} catch (error) {
-		// Handle any errors that might occur
-		console.error(error);
-		return response.status(500).json({
-			success: false,
-			message: "Server error. Unable to retrieve products.",
-		});
+	  console.error(error)
+	  return response.status(500).json({
+		success: false,
+		message: 'Server error. Unable to retrieve products.',
+	  })
 	}
-};
+  }
 
 
 // Get a single product by ID

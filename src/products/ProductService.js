@@ -20,15 +20,84 @@ const createProduct = async (productData) => {
 
 //Service function to retrieve all products from the database.
 
-const getAllProducts = async () => {
+const getAllProducts = async (queryParams) => {
 	try {
-		// Use Mongoose's `find` method to get all products in the collection
-		return await ProductModel.find();
+	  // Start with an empty query object
+	  let query = {}
+	  
+	  // Filter by type
+	  // URL Examples:
+	  // /products?type=vinyl
+	  // /products?type=turntable
+	  // /products?type=accessory
+	  // /products?type=speaker
+	  if (queryParams.type) {
+		query.type = queryParams.type
+	  }
+	  
+	  // Search by name (case-insensitive)
+	  // URL Examples:
+	  // /products?search=Dark Side of the Moon
+	  // /products?search=Beatles
+	  // /products?search=Pro-Ject
+	  if (queryParams.search) {
+		query.name = { $regex: queryParams.search, $options: 'i' }
+	  }
+	  
+	  // Filter by price range
+	  // URL Examples:
+	  // /products?price-min=20&price-max=50    (products between $20 and $50)
+	  // /products?price-min=100                (products $100 and above)
+	  // /products?price-max=30                 (products $30 and below)
+	  if (queryParams['price-min'] || queryParams['price-max']) {
+		query.price = {}
+		if (queryParams['price-min']) {
+		  query.price.$gte = Number(queryParams['price-min'])
+		}
+		if (queryParams['price-max']) {
+		  query.price.$lte = Number(queryParams['price-max'])
+		}
+	  }
+	  
+	  // Filter by stock availability
+	  // URL Example:
+	  // /products?in-stock=true                (only show products with stock > 0)
+	  if (queryParams['in-stock'] === 'true') {
+		query.stock = { $gt: 0 }
+	  }
+	  
+	  // Create the base query
+	  let productsQuery = ProductModel.find(query)
+	  
+	  // Handle sorting
+	  // URL Examples:
+	  // /products?sort=price&order=asc         (sort by price, lowest first)
+	  // /products?sort=price&order=desc        (sort by price, highest first)
+	  // /products?sort=name&order=asc          (sort alphabetically A-Z)
+	  // /products?sort=name&order=desc         (sort alphabetically Z-A)
+	  if (queryParams.sort) {
+		const sortOrder = queryParams.order === 'desc' ? -1 : 1
+		productsQuery = productsQuery.sort({ [queryParams.sort]: sortOrder })
+	  }
+	  
+	  // Complex URL Examples combining multiple parameters:
+	  // /products?type=vinyl&search=Pink Floyd&price-min=20&price-max=50&in-stock=true
+	  // (Find in-stock vinyl records by Pink Floyd between $20-$50)
+	  
+	  // /products?type=turntable&price-min=200&sort=price&order=asc
+	  // (Find turntables $200 and above, sorted by price low to high)
+	  
+	  // /products?search=Beatles&in-stock=true&sort=name&order=asc
+	  // (Find in-stock Beatles items, sorted alphabetically)
+	  
+	  // Execute the query and return results
+	  return await productsQuery
+	  
 	} catch (error) {
-		// Throw an error if something goes wrong
-		throw new Error(`Error retrieving products: ${error.message}`);
+	  throw new Error(`Error retrieving products: ${error.message}`)
 	}
-};
+  }
+
 
 // Service function to retrieve a single product by its ID.
 
