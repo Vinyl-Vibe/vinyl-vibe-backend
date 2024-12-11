@@ -86,7 +86,7 @@ const UserController = {
 			const { userId } = req.params;
 			const updates = req.body;
 
-			const updatedUser = await UserService.updateUser(userId, updates);
+			const updatedUser = await UserService.updateUser(userId, updates, req.user);
 			if (!updatedUser) {
 				throw new AppError("User not found", 404);
 			}

@@ -68,15 +68,26 @@ const UserService = {
 		return User.findById(userId).select("-password");
 	},
 
-	async updateUser(userId, updates) {
-		// Use findByIdAndUpdate for atomic updates
-		// new: true returns updated document
-		// runValidators ensures schema validation runs on update
-		return User.findByIdAndUpdate(
-			userId,
-			{ $set: updates },
-			{ new: true, runValidators: true }
-		).select("-password");
+	async updateUser(userId, updates, currentUser) {
+		try {
+			// Correctly checks role for sensitive operations
+			if (updates.role && currentUser.role !== 'admin') {
+				throw new AppError('Only administrators can modify user roles', 403)
+			}
+			// Correctly checks ownership/admin status
+			if (currentUser.role !== 'admin' && currentUser.userId !== userId) {
+				throw new AppError('You can only modify your own account', 403)
+			}
+
+			return User.findByIdAndUpdate(
+				userId,
+				{ $set: updates },
+				{ new: true, runValidators: true }
+			).select('-password')
+		} catch (error) {
+			if (error.isOperational) throw error
+			throw new AppError('Error updating user', 500)
+		}
 	},
 
 	async deleteUser(userId) {

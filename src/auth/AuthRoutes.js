@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const AuthController = require("./AuthController");
-const { validateUserAuth } = require("../users/UserMiddleware");
+const { validateUserAuth } = require("./AuthMiddleware");
 
 /**
  * Auth routes handle user authentication flows
@@ -19,8 +19,8 @@ router.post("/login", AuthController.login);
 router.post("/logout", AuthController.logout);
 
 // Password reset routes (public)
-router.post('/forgot-password', AuthController.forgotPassword)
-router.post('/reset-password', AuthController.resetPassword)
+router.post("/forgot-password", AuthController.forgotPassword);
+router.post("/reset-password", AuthController.resetPassword);
 
 // Protected route - requires valid token
 // Why validate refresh token?

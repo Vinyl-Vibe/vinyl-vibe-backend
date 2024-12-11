@@ -1,0 +1,15 @@
+meta {
+  name: in-stock-products
+  type: http
+  seq: 9
+}
+
+get {
+  url: http://localhost:8080/products?in-stock=true
+  body: none
+  auth: none
+}
+
+params:query {
+  in-stock: true
+}
