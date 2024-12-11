@@ -160,9 +160,43 @@ const removeItem = async (req, res, next) => {
 };
 
 
+/**
+ * Retrieve cart items filtered by user ID
+ * GET /cart?user-id=123
+ */
+
+const getFilteredCart = async (req, res, next) => {
+    try {
+
+        // Extract the 'userId' from the query parameters
+        const { "user-id": userId } = req.query;
+
+        // Validate that there is a 'userID' present within the query
+        if (!userId) {
+
+            // Throw a 400 Bad Request error if the 'userId' is missing
+            return next(new AppError("User ID is required for filtering", 400));
+        }
+
+        // Fetch the cart associated with the 'userId' provided
+        const cart = await CartService.getCartByUserId(userId);
+        
+        // Sends a 200 success response with the updated cart
+        res.status(200).json({ 
+            status: "success", 
+            data: cart,
+        });
+
+    // Foreard any errors to the errorHandler middleware
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getCart,
     addItem,
     updateItemQuantity,
-    removeItem
+    removeItem,
+    getFilteredCart
 }
