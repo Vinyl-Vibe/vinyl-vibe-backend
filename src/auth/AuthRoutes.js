@@ -21,8 +21,8 @@ router.post("/logout", AuthController.logout);
 
 // Password reset routes (public)
 const passwordResetLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 3 // limit each IP to 3 requests per hour
+    windowMs: 60 * 60 * 1000, // 1 hour 
+    max: 10 // limit each IP to 10 requests per hour
 })
 
 router.post("/forgot-password", passwordResetLimiter, AuthController.forgotPassword);
