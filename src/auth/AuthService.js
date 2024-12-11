@@ -1,4 +1,4 @@
-const jwt = require("jsonwebtoken");
+const { generateJWT } = require('./AuthMiddleware')
 const UserService = require("../users/UserService");
 const crypto = require('crypto')
 const EmailService = require('../utils/emailService')
@@ -16,16 +16,7 @@ const { AppError } = require('../utils/middleware/errorMiddleware')
 const AuthService = {
 	async generateToken(user) {
 		try {
-			return jwt.sign(
-				{
-					userId: user._id,
-					email: user.email,
-					role: user.role,
-					isAdmin: user.role === "admin",
-				},
-				process.env.JWT_SECRET,
-				{ expiresIn: "7d" }
-			);
+			return generateJWT(user._id, user.email, user.role);
 		} catch (error) {
 			throw new AppError('Error generating token', 500);
 		}

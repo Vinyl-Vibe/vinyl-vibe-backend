@@ -69,21 +69,21 @@ const getProductById = async (request, response, next) => {
  */
 const updateProduct = async (request, response, next) => {
     try {
-        const { id } = request.params
-        const updates = request.body
-        
+        const { id } = request.params;
+        const updates = request.body;
+
         // Why await here instead of .then()?
         // - Cleaner error handling with try/catch
         // - More readable synchronous-style code
         // - Easier to debug with stack traces
-        const product = await ProductService.updateProduct(id, updates)
-        
+        const product = await ProductService.updateProduct(id, updates);
+
         // Why check for product existence here AND in service?
         // - Service ensures data integrity
         // - Controller ensures proper HTTP response
         // - Defence in depth principle
         if (!product) {
-            return next(new AppError('Product not found', 404))
+            return next(new AppError("Product not found", 404));
         }
 
         // Why return a success message AND the updated product?
@@ -92,17 +92,17 @@ const updateProduct = async (request, response, next) => {
         // - Follows REST best practices
         return response.status(200).json({
             success: true,
-            message: 'Product updated successfully',
-            product
-        })
+            message: "Product updated successfully",
+            product,
+        });
     } catch (error) {
         // Why use AppError with next()?
         // - Consistent error format across API
         // - Centralised error handling
         // - Proper error logging
-        next(new AppError('Failed to update product', 500))
+        next(new AppError("Failed to update product", 500));
     }
-}
+};
 
 /**
  * Delete a product by ID
@@ -113,16 +113,16 @@ const updateProduct = async (request, response, next) => {
  */
 const deleteProduct = async (request, response, next) => {
     try {
-        const { id } = request.params
-        
+        const { id } = request.params;
+
         // Why use service layer for deletion?
         // - Consistent business logic
         // - Future-proof for soft delete implementation
         // - Centralised database operations
-        const product = await ProductService.deleteProduct(id)
-        
+        const product = await ProductService.deleteProduct(id);
+
         if (!product) {
-            return next(new AppError('Product not found', 404))
+            return next(new AppError("Product not found", 404));
         }
 
         // Why not return deleted product?
@@ -131,12 +131,12 @@ const deleteProduct = async (request, response, next) => {
         // - Clear indication of successful deletion
         return response.status(200).json({
             success: true,
-            message: 'Product deleted successfully'
-        })
+            message: "Product deleted successfully",
+        });
     } catch (error) {
-        next(new AppError('Failed to delete product', 500))
+        next(new AppError("Failed to delete product", 500));
     }
-}
+};
 
 module.exports = {
     createProduct,

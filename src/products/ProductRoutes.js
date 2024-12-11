@@ -7,7 +7,7 @@ const {
 	updateProduct,
 	deleteProduct,
 } = require("./ProductController");
-const { validateJWT } = require('../utils/middleware/jwtMiddleware')
+const { validateUserAuth } = require('../auth/AuthMiddleware')
 const { requireAdmin } = require('../utils/middleware/roleMiddleware')
 
 // Initialize the router
@@ -21,9 +21,9 @@ router.get('/:id', getProductById) // Allow public access to view single product
 // Why both validateJWT and requireAdmin?
 // - validateJWT verifies the token and adds user to request
 // - requireAdmin checks if the user has admin role
-router.post('/', validateJWT, requireAdmin, createProduct)
-router.put('/:id', validateJWT, requireAdmin, updateProduct)
-router.delete('/:id', validateJWT, requireAdmin, deleteProduct)
+router.post('/', validateUserAuth, requireAdmin, createProduct)
+router.put('/:id', validateUserAuth, requireAdmin, updateProduct)
+router.delete('/:id', validateUserAuth, requireAdmin, deleteProduct)
 
 // Export the router for use in the application
 module.exports = router;
