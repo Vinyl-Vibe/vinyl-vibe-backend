@@ -1,0 +1,15 @@
+meta {
+  name: products-type
+  type: http
+  seq: 6
+}
+
+get {
+  url: http://localhost:8080/products?type=vinyl
+  body: none
+  auth: none
+}
+
+params:query {
+  type: vinyl
+}

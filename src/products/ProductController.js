@@ -24,11 +24,23 @@ const createProduct = async (request, response) => {
 	}
 };
 
-// Get all products
+
+// Get all products (with optional filter by type)
 const getAllProducts = async (request, response) => {
 	try {
-		// Fetch all products from the database
-		const products = await ProductModel.find();
+		// Extract the 'type' query parameter from the request
+		const { type } = request.query;
+
+		// Create a filter object to pass to the `find` query
+		let filter = {};
+
+		// If a type is provided, add it to the filter
+		if (type) {
+			filter.type = type;
+		}
+
+		// Fetch products from the database, applying the filter if available
+		const products = await ProductModel.find(filter);
 
 		// Send back the list of products
 		return response.status(200).json({
@@ -44,6 +56,7 @@ const getAllProducts = async (request, response) => {
 		});
 	}
 };
+
 
 // Get a single product by ID
 const getProductById = async (request, response) => {
