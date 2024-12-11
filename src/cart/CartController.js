@@ -120,9 +120,49 @@ const updateItemQuantity = async (req, res, next) => {
 };
 
 
+/**
+ * Remove an item from the cart
+ * DELETE /cart/:item-id
+ */
+const removeItem = async (req, res, next) => {
+    try {
+        
+        // Extract the 'itemId' from the route parameters and 'userId' authenticated by the middleware
+        const { itemId } = req.params;
+        const userId = req.user._id;
+
+        // Fetches the cart associated with that user from the database
+        const cart = await CartService.getCartByUserId(userId);
+
+        // Removes the item specified by the 'itemId' from the cart
+        // 'removeProductFromCart' throws an error if the product is not in the cart
+        const updatedCart = await CartService.removeProductFromCart(cart, itemId);
+
+        // Sends a 200 success response with the updated cart
+        res.status(200).json({
+            status: "success",
+            message: "Product removed from cart",
+            data: updatedCart,
+        });
+    } catch (error) {
+
+        // When an item is not found in the cart, the error message will be:
+        // "Product not found in cart"
+        if (error.message === "Product not found in cart") {
+
+            // Return a 404 Bad Request from errorMiddleware.js
+            return next(new AppError("The specified product does not exist in the cart.", 404));
+        }
+
+        // Forward all other unexpected errors to the errorHandler
+        next(error);
+    }
+};
+
 
 module.exports = {
     getCart,
     addItem,
-    updateItemQuantity
+    updateItemQuantity,
+    removeItem
 }
