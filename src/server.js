@@ -11,6 +11,7 @@ const express = require("express");
 const corsMiddleware = require("./utils/middleware/corsMiddleware");
 const authRoutes = require("./auth/AuthRoutes");
 const userRoutes = require("./users/UserRoutes");
+const cartRoutes = require("./cart/CartRoutes")
 const { errorHandler } = require("./utils/middleware/errorMiddleware");
 
 /**
@@ -37,9 +38,17 @@ app.use(express.json()); // Parse JSON request bodies
 app.use(corsMiddleware);
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
+app.use("/cart", cartRoutes);
 
 // Error handling middleware - must be last
 app.use(errorHandler);
+
+const { generateJWT } = require("./utils/middleware/jwtMiddleware");
+
+app.get("/generate-token", (req, res) => {
+    const testToken = generateJWT("12345", "testUser", ["user"]);
+    res.status(200).json({ token: testToken });
+});
 
 module.exports = {
 	app,

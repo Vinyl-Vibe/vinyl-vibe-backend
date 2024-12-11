@@ -22,7 +22,8 @@ async function validateUserAuth(request, response, next) {
 		// - Industry standard for token transmission
 		// - Keeps authentication separate from request data
 		// - Allows for consistent token handling across routes
-		let providedToken = request.headers.jwt;
+		// let providedToken = request.headers.jwt;
+		let providedToken = request.headers.authorization;
 
 		// Early return if no token provided
 		// Why 403 instead of 401?

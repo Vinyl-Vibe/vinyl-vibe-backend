@@ -81,6 +81,8 @@ function validateJWT(req, res, next) {
     }
 }
 
+console.log("Loaded JWT Secret Key:", jwtSecretKey);
+
 module.exports = {
     generateJWT,
     decodeJWT,
