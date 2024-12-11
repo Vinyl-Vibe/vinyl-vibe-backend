@@ -16,10 +16,14 @@ async function dbConnect() {
     // Why use npm_package_name?
     // - Creates database named after project
     // - Prevents test/dev database collisions
-	let databaseUrl = process.env.DATABASE_URL;
+    let databaseUrl = process.env.DATABASE_URL;
 
-	try {
-		// Connect with Mongoose
+    if (!databaseUrl) {
+        databaseUrl = `mongodb://127.0.0.1:27017/${process.env.npm_package_name}`;
+    }
+
+    try {
+        // Connect with Mongoose
         // Why async/await?
         // - Cleaner error handling
         // - Ensures connection before server starts
