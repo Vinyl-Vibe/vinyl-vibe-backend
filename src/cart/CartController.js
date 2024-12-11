@@ -1,5 +1,6 @@
 const CartService = require("./CartService")
 const { AppError } = require("../utils/middleware/errorMiddleware")
+const { CartModel } = require("./CartModel")
 
 /**
  * Retrieve the current cart for the authenticated user
@@ -8,7 +9,7 @@ const { AppError } = require("../utils/middleware/errorMiddleware")
 
 const getCart = async (req, res, next) => {
     try {
-        const userId = req.user.userId;
+        const userId = req.user._id;
         const cart = await CartService.getCartByUserId(userId);
         
         res.status(200).json({ 
@@ -27,41 +28,35 @@ const getCart = async (req, res, next) => {
 
 const addItem = async (req, res, next) => {
     try {
+        // Handle both single product and array of products
+        const products = Array.isArray(req.body.products) 
+            ? req.body.products 
+            : [req.body]; // If single product, wrap it in array
 
-        // Extracts the 'userId' validated and attached to req.user by 'authMiddleware.js'
-        const userId = req.user._id;
+        // Validate product structure
+        const isValidProduct = product => 
+            product.productId && 
+            typeof product.quantity === 'number' && 
+            product.quantity > 0;
 
-        // Destructure 'productId' and 'quantity' from the incoming request body
-        const { productId, quantity } = req.body;
-
-        // Ensures that 'productId' or 'quantity' are provided.
-        if (!productId || !quantity) {
-            
-            // Throw a 400 Bad Request error handled by errorMiddleware.js
-            return next(new AppError("Product ID and quantity are required", 400));
+        if (!products.every(isValidProduct)) {
+            throw new AppError(
+                "Each product must have a productId and a positive quantity", 
+                400
+            );
         }
 
-        // See if the userId is already associated with a cart document in the database
-        // If no cart exists, 'cart' is set to null.
-        let cart = await CartService.getCartByUserId(userId).catch(() => null);
+        let cart = await CartModel.findOne({ userId: req.user._id });
+        if (!cart) {
+            cart = await CartService.createCart(req.user._id, products);
+        } else {
+            cart = await CartService.addOrUpdateProducts(cart, products);
+        }
 
-        // Add or update products in the cart
-        // - If 'cart' exists, update the cart
-        // - If 'cart' doesn't exist, create a new cart with the product
-        const updatedCart = cart
-            // Update existing cart
-            ? await CartService.addOrUpdateProducts(cart, [{ productId, quantity }])
-            // Creates a new cart 
-            : await CartService.createCart(userId, [{ productId, quantity }]);
-
-        // Sends a HTTP response status code 201 when the request is 
-        // successfully created or updated
-        res.status(201).json({ 
-            status: "success", 
-            data: updatedCart,
+        res.status(200).json({
+            status: "success",
+            data: cart
         });
-
-    // Foreard any errors to the errorHandler middleware
     } catch (error) {
         next(error);
     }
@@ -69,42 +64,33 @@ const addItem = async (req, res, next) => {
 
 /**
  * Update the quantity of an item in the cart
- * PUT /cart/:item-id
+ * PUT /cart/:itemId
  */
 
 const updateItemQuantity = async (req, res, next) => {
     try {
-
-        // Extract the 'itemId' from the route parameters and the 'quantity' from the request body
         const { itemId } = req.params;
         const { quantity } = req.body;
 
-        // Validate the 'quantity' input
         if (!quantity || quantity < 1) {
-
-            // Return a 400 Bad Request error when the quantity is missing or less than 1
-            return next(new AppError("Quantity must be at least 1", 400));
+            throw new AppError("Invalid quantity", 400);
         }
 
-        // Extracts the 'userId' validated and attached to req.user by 'authMiddleware.js'
-        const userId = req.user._id;
+        const cart = await CartModel.findOne({ userId: req.user._id });
+        if (!cart) {
+            throw new AppError("Cart not found", 404);
+        }
 
-        // Fetches the cart associated with the 'userId'
-        const cart = await CartService.getCartByUserId(userId);
+        // Pass isUpdate=true to set the quantity instead of adding to it
+        const updatedCart = await CartService.addOrUpdateProducts(cart, [{
+            productId: itemId,
+            quantity
+        }], true);
 
-        // Handles the adding or updating of the quantity of the product in the cart
-        const updatedCart = await CartService.addOrUpdateProducts(cart, [
-            { productId: itemId, quantity },
-        ]);
-
-
-        // Sends a HTTP response staus code 200 when the request is successful
-        res.status(200).json({ 
-            status: "success", 
-            data: updatedCart,
+        res.status(200).json({
+            status: "success",
+            data: updatedCart
         });
-    
-    // Foreard any errors to the errorHandler middleware
     } catch (error) {
         next(error);
     }
@@ -158,27 +144,20 @@ const removeItem = async (req, res, next) => {
 
 const getFilteredCart = async (req, res, next) => {
     try {
-
-        // Extract the 'userId' from the query parameters
+        // Extract the userId (_id from User model) from query parameters
         const { "user-id": userId } = req.query;
-
-        // Validate that there is a 'userID' present within the query
+        
         if (!userId) {
-
-            // Throw a 400 Bad Request error if the 'userId' is missing
             return next(new AppError("User ID is required for filtering", 400));
         }
 
-        // Fetch the cart associated with the 'userId' provided
+        // userId here should match User model _id
         const cart = await CartService.getCartByUserId(userId);
         
-        // Sends a 200 success response with the updated cart
         res.status(200).json({ 
             status: "success", 
             data: cart,
         });
-
-    // Foreard any errors to the errorHandler middleware
     } catch (error) {
         next(error);
     }

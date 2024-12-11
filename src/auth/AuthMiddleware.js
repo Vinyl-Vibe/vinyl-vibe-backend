@@ -26,11 +26,16 @@ if (!JWT_SECRET) {
  * - Role-based access control
  * - Avoid database lookups for basic permissions
  * - Stateless authorization checks
+ * 
+ * Why use _id instead of userId?
+ * - Consistent with MongoDB's _id field
+ * - Used throughout the application
+ * - Prevents confusion between different ID formats
  */
 function generateJWT(userId, email, role) {
     return jwt.sign(
         {
-            userId,
+            _id: userId,
             email,
             role,
             isAdmin: role === 'admin'

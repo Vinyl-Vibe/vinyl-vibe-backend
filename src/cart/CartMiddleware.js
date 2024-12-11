@@ -11,18 +11,11 @@ const isAuthenticated = (req, res, next) => {
     }
 
     try {
-        // Verify the JWT and decode the payload
-        //  This will check that the JWT was:
-        // - Signed with the correct JWT_SECRET_KEY
-        // - Has not been tampered with
-        // - Has not expired
+        // JWT payload contains _id from User model
         const decoded = jwt.verify(token.split(" ")[1], process.env.JWT_SECRET_KEY);
-        
-        // Attach the decoded payload to the request object
-        req.user = decoded; 
+        req.user = decoded; // Contains _id, email, role
         next();
     } catch (error) {
-        // If the token is invalid (e.g, tampered with, expired, or incorrect signature), an error is thrown
         return res.status(401).json({ message: "Unauthorized: Invalid token" });
     }
 };

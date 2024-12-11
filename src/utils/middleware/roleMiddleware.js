@@ -9,6 +9,7 @@
  */
 
 const { AppError } = require('./errorMiddleware');
+const { CartModel } = require('../../cart/CartModel');
 
 /**
  * Create middleware for checking user roles
@@ -76,8 +77,42 @@ const requireOwnership = (paramName = 'userId') => {
             }
 
             // Check if user owns the resource
-            if (req.user.userId !== resourceId) {
-                throw new AppError('Unauthorised access to resource', 403);
+            if (req.user._id !== resourceId) {
+                throw new AppError('Unauthorized access to resource', 403);
+            }
+
+            next();
+        } catch (error) {
+            next(error);
+        }
+    };
+};
+
+/**
+ * Check if user has access to cart item
+ * 
+ * Why separate cart middleware?
+ * - Specific to cart operations
+ * - Handles cart-product relationship
+ * - Clear separation of concerns
+ */
+const requireCartItemOwnership = (paramName) => {
+    return async (req, res, next) => {
+        try {
+            const productId = req.params[paramName];
+            const userId = req.user._id;
+
+            const cart = await CartModel.findOne({ userId });
+            if (!cart) {
+                throw new AppError('Cart not found', 404);
+            }
+
+            const productExists = cart.products.some(
+                item => item.productId.toString() === productId
+            );
+
+            if (!productExists) {
+                throw new AppError('Product not found in cart', 404);
             }
 
             next();
@@ -115,5 +150,6 @@ module.exports = {
     requireRole,
     requireAdmin,
     requireOwnership,
+    requireCartItemOwnership,
     canModifyUser
 }; 

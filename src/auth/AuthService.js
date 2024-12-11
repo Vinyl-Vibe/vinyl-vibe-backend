@@ -1,5 +1,5 @@
 const { generateJWT } = require('./AuthMiddleware')
-const UserService = require("../users/UserService");
+const UserService = require('../users/UserService');
 const crypto = require('crypto')
 const EmailService = require('../utils/emailService')
 const { AppError } = require('../utils/middleware/errorMiddleware')
@@ -103,6 +103,17 @@ const AuthService = {
 		await user.save() // This will trigger password hashing via pre-save hook
 
 		return user
+	},
+
+	async validateToken(token) {
+		try {
+			// Decoded token contains _id from User model
+			const decoded = jwt.verify(token, JWT_SECRET);
+			const user = await UserService.getUserById(decoded._id);
+			return user;
+		} catch (error) {
+			throw new AppError("Invalid token", 401);
+		}
 	}
 };
 

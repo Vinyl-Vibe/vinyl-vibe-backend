@@ -111,17 +111,14 @@ const getAllProducts = async (queryParams) => {
 
 const getProductById = async (productId) => {
     try {
-        // Use Mongoose's `findById` method to get the product by its ID
         const product = await ProductModel.findById(productId);
-        // If no product is found, throw a custom error
         if (!product) {
-            throw new Error("Product not found");
+            throw new AppError("Product not found", 404);
         }
-        // Return the found product
         return product;
     } catch (error) {
-        // Throw an error if something goes wrong
-        throw new Error(`Error retrieving product: ${error.message}`);
+        if (error instanceof AppError) throw error;
+        throw new AppError(`Error retrieving product: ${error.message}`, 500);
     }
 };
 
@@ -134,29 +131,18 @@ const getProductById = async (productId) => {
  */
 const updateProduct = async (productId, productData) => {
     try {
-        // Why these options?
-        // new: true - returns updated document instead of old one
-        // runValidators: true - ensures updates meet schema requirements
         const updatedProduct = await ProductModel.findByIdAndUpdate(
             productId,
             productData,
             { new: true, runValidators: true }
         );
 
-        // Why throw error instead of returning null?
-        // - Forces error handling
-        // - Consistent error patterns
-        // - Clear indication of failure reason
         if (!updatedProduct) {
             throw new AppError("Product not found", 404);
         }
 
         return updatedProduct;
     } catch (error) {
-        // Why check error instance?
-        // - Preserve original error types
-        // - Maintain error status codes
-        // - Prevent double-wrapping errors
         if (error instanceof AppError) throw error;
         throw new AppError(`Error updating product: ${error.message}`, 500);
     }

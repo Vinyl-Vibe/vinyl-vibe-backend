@@ -4,30 +4,32 @@ const mongoose = require("mongoose");
 // Define the cart schema
 const CartSchema = new mongoose.Schema(
     {
-        // User purchasing the product 
         userId: {
-            type: mongoose.Schema.Types.ObjectId, // Reference to the User Model
-            ref: "User", // String that mongoose will search for within it's internal registry. No need for import.
-            required: true, // Field must be provided
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
         },
         products: [
             {
+                _id: false,
                 productId: {
-                    type: mongoose.Schema.Types.ObjectId, // Reference to the Product Model
-                    ref: "Product", // String that mongoose will search for within it's internal registery. No need for import.
-                    required: false, // Optional field to reflect that a cart can be empty.
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: "Product",
+                    required: true,
                 },
                 quantity: {
                     type: Number,
-                    required: true, // If there is a productID, there must be a quantity. 
-                    min: 1, // Prevents negative quantities. 
+                    required: true,
+                    min: 1,
                     default: 1,
                 },
             },
         ],
     },
     {
-        timestamps: true, // Automatically adds 'createdAt' and 'updatedAt' to entry
+        timestamps: true,
+        toJSON: { virtuals: true },
+        toObject: { virtuals: true }
     }
 );
 

@@ -64,8 +64,17 @@ const UserService = {
 		}
 	},
 
-	async getUserById(userId) {
-		return User.findById(userId).select("-password");
+	async getUserById(userId, includeResetFields = false) {
+		// If includeResetFields is false, exclude reset-related fields
+		const fieldsToExclude = includeResetFields 
+			? '-password' 
+			: '-password -resetPasswordToken -resetPasswordExpires';
+			
+		const user = await User.findById(userId).select(fieldsToExclude);
+		if (!user) {
+			throw new AppError("User not found", 404);
+		}
+		return user;
 	},
 
 	async updateUser(userId, updates, currentUser) {
