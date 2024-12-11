@@ -1,7 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const AuthController = require("./AuthController");
-const { validateUserAuth } = require("../users/UserMiddleware");
+const { validateUserAuth } = require("./AuthMiddleware");
+const rateLimit = require('express-rate-limit')
 
 /**
  * Auth routes handle user authentication flows
@@ -19,8 +20,13 @@ router.post("/login", AuthController.login);
 router.post("/logout", AuthController.logout);
 
 // Password reset routes (public)
-router.post('/forgot-password', AuthController.forgotPassword)
-router.post('/reset-password', AuthController.resetPassword)
+const passwordResetLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 3 // limit each IP to 3 requests per hour
+})
+
+router.post("/forgot-password", passwordResetLimiter, AuthController.forgotPassword);
+router.post("/reset-password", AuthController.resetPassword);
 
 // Protected route - requires valid token
 // Why validate refresh token?

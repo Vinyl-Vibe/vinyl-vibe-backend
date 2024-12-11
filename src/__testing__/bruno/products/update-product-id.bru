@@ -1,0 +1,20 @@
+meta {
+  name: update-product-id
+  type: http
+  seq: 4
+}
+
+put {
+  url: http://localhost:8080/products/675830253880b03b7571192e
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Klipsch R-51M Bookshelf Speakers",
+    "price": 199.99,
+    "type": "speaker",
+    "stock": 12
+  }
+}

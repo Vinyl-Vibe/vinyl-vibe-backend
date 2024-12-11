@@ -1,0 +1,15 @@
+meta {
+  name: products-by-name
+  type: http
+  seq: 7
+}
+
+get {
+  url: http://localhost:8080/products?search=Dark Side of the Moon
+  body: none
+  auth: none
+}
+
+params:query {
+  search: Dark Side of the Moon
+}

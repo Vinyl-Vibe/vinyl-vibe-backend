@@ -87,8 +87,33 @@ const requireOwnership = (paramName = 'userId') => {
     };
 };
 
+/**
+ * Middleware to check if user has permission to access/modify user data
+ * 
+ * Why separate middleware?
+ * - Reusable across different routes
+ * - Keeps authorization logic in one place
+ * - Makes routes cleaner and more focused
+ */
+const canModifyUser = (req, res, next) => {
+    try {
+        const targetUserId = req.params.userId
+        const currentUser = req.user
+
+        // Allow if admin or if user is modifying their own account
+        if (currentUser.role === 'admin' || currentUser.userId === targetUserId) {
+            return next()
+        }
+
+        throw new AppError('You do not have permission to modify this user account', 403)
+    } catch (error) {
+        next(error)
+    }
+}
+
 module.exports = {
     requireRole,
     requireAdmin,
-    requireOwnership
+    requireOwnership,
+    canModifyUser
 }; 
