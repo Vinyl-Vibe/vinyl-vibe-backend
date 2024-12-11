@@ -11,7 +11,7 @@ const express = require("express");
 const corsMiddleware = require("./utils/middleware/corsMiddleware");
 const authRoutes = require("./auth/AuthRoutes");
 const userRoutes = require("./users/UserRoutes");
-const productRoutes = require("./product/ProductRoutes");
+const productRoutes = require("./products/ProductRoutes");
 const { errorHandler } = require("./utils/middleware/errorMiddleware");
 
 /**
@@ -44,5 +44,5 @@ app.use("/products", productRoutes);
 app.use(errorHandler);
 
 module.exports = {
-	app,
+    app,
 };
