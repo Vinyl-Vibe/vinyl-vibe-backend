@@ -10,6 +10,8 @@
 
 const { AppError } = require("../utils/middleware/errorMiddleware");
 const jwt = require("jsonwebtoken");
+const crypto = require('crypto');
+const User = require('../models/User');
 
 // Get secret key from environment
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -63,7 +65,49 @@ async function validateUserAuth(request, response, next) {
     }
 }
 
+const validateResetToken = async (req, res, next) => {
+    try {
+        const { token } = req.body
+        if (!token) {
+            throw new AppError('Reset token is required', 400)
+        }
+
+        const hashedToken = crypto
+            .createHash('sha256')
+            .update(token)
+            .digest('hex')
+
+        const user = await User.findOne({
+            resetPasswordToken: hashedToken,
+            resetPasswordExpires: { $gt: Date.now() }
+        })
+
+        if (!user) {
+            throw new AppError('Invalid or expired reset token', 401)
+        }
+
+        // Attach user to request for next middleware
+        req.user = user
+        next()
+    } catch (error) {
+        next(error)
+    }
+}
+
+const validateNewPassword = (req, res, next) => {
+    const { newPassword } = req.body
+    
+    if (!newPassword || newPassword.length < 8) {
+        return next(new AppError('Password must be at least 8 characters', 400))
+    }
+    
+    // Add more password requirements as needed
+    next()
+}
+
 module.exports = {
     generateJWT,
-    validateUserAuth
+    validateUserAuth,
+    validateResetToken,
+    validateNewPassword
 };
