@@ -1,0 +1,17 @@
+meta {
+    name: Update Cart Item Quantity
+    type: http
+    seq: 3
+}
+
+put {
+    url: http://localhost:8080/cart/67596bb44c8dcc755fd78974
+    body: json
+    auth: inherit
+}
+
+body:json {
+    {
+        "quantity": 3
+    }
+}

@@ -11,6 +11,7 @@ const express = require("express");
 const corsMiddleware = require("./utils/middleware/corsMiddleware");
 const authRoutes = require("./auth/AuthRoutes");
 const userRoutes = require("./users/UserRoutes");
+const cartRoutes = require("./cart/CartRoutes");
 const productRoutes = require("./products/ProductRoutes");
 const { errorHandler } = require("./utils/middleware/errorMiddleware");
 
@@ -38,7 +39,10 @@ app.use(express.json()); // Parse JSON request bodies
 app.use(corsMiddleware);
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
+app.use("/cart", cartRoutes);
 app.use("/products", productRoutes);
+
+// Error handling middleware - must be last
 app.use(errorHandler);
 
 module.exports = {

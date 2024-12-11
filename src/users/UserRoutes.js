@@ -2,7 +2,10 @@ const express = require("express");
 const router = express.Router();
 const UserController = require("./UserController");
 const { validateUserAuth } = require("../auth/AuthMiddleware");
-const { canModifyUser, requireAdmin } = require("../utils/middleware/roleMiddleware");
+const {
+    canModifyUser,
+    requireAdmin,
+} = require("../utils/middleware/roleMiddleware");
 
 /**
  * User routes handle user data management

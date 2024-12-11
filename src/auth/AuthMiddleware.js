@@ -11,7 +11,7 @@
 const { AppError } = require("../utils/middleware/errorMiddleware");
 const jwt = require("jsonwebtoken");
 const crypto = require('crypto');
-const User = require('../models/User');
+const { User } = require('../users/UserModel');
 
 // Get secret key from environment
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -26,11 +26,16 @@ if (!JWT_SECRET) {
  * - Role-based access control
  * - Avoid database lookups for basic permissions
  * - Stateless authorization checks
+ * 
+ * Why use _id instead of userId?
+ * - Consistent with MongoDB's _id field
+ * - Used throughout the application
+ * - Prevents confusion between different ID formats
  */
 function generateJWT(userId, email, role) {
     return jwt.sign(
         {
-            userId,
+            _id: userId,
             email,
             role,
             isAdmin: role === 'admin'
