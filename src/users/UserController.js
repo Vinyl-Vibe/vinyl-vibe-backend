@@ -117,7 +117,7 @@ const UserController = {
 	// GET /users/profile - Get current user profile
 	async getProfile(req, res, next) {
 		try {
-			const userId = req.user.userId;
+			const userId = req.user._id;
 			const profile = await UserService.getUserProfile(userId);
 
 			if (!profile) {
@@ -133,7 +133,7 @@ const UserController = {
 	// PUT /users/profile - Update current user profile
 	async updateProfile(req, res, next) {
 		try {
-			const userId = req.user.userId;
+			const userId = req.user._id;
 			const profileData = req.body;
 
 			const updatedProfile = await UserService.updateUserProfile(

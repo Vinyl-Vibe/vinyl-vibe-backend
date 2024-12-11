@@ -54,7 +54,49 @@ const UserSchema = new mongoose.Schema(
 		resetPasswordToken: String,
 		resetPasswordExpires: Date
 	},
-	{ timestamps: true }
+	{ 
+		timestamps: true,
+		versionKey: false,  // This removes __v from all responses
+		toJSON: { 
+			transform: (doc, ret) => {
+				// Create ordered object
+				const ordered = {
+					_id: ret._id,
+					email: ret.email,
+					role: ret.role,
+					profile: ret.profile,
+					createdAt: ret.createdAt,
+					updatedAt: ret.updatedAt
+				};
+				
+				// Remove sensitive fields
+				delete ret.password;
+				delete ret.resetPasswordToken;
+				delete ret.resetPasswordExpires;
+				
+				return ordered;
+			}
+		},
+		toObject: {
+			transform: (doc, ret) => {
+				// Same transform for toObject
+				const ordered = {
+					_id: ret._id,
+					email: ret.email,
+					role: ret.role,
+					profile: ret.profile,
+					createdAt: ret.createdAt,
+					updatedAt: ret.updatedAt
+				};
+				
+				delete ret.password;
+				delete ret.resetPasswordToken;
+				delete ret.resetPasswordExpires;
+				
+				return ordered;
+			}
+		}
+	}
 );
 
 // Pre-save hook runs before saving document

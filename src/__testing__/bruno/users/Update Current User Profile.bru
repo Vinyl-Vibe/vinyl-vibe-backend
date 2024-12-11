@@ -1,5 +1,5 @@
 meta {
-  name: Update User Profile
+  name: Update Current User Profile
   type: http
   seq: 6
 }
@@ -12,14 +12,14 @@ put {
 
 body:json {
   {
-    "firstName": "Damian",
+    "firstName": "John",
     "lastName": "Doe",
     "phoneNumber": "+1234567890",
     "address": {
-      "street": "123 Main St",
-      "city": "New York",
-      "state": "NY",
-      "postalCode": "10001",
+      "street": "123 Main Street",
+      "city": "Springfield",
+      "state": "IL",
+      "postalCode": "12345",
       "country": "USA"
     }
   }

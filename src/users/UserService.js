@@ -30,9 +30,6 @@ const UserService = {
 
 			// Apply filters
 			if (filters.search) {
-				// Search in email field
-				// Why use regex? Allows partial matches
-				// Why case-insensitive? Better user experience
 				query = query.where('email', new RegExp(filters.search, 'i'));
 			}
 
@@ -49,16 +46,23 @@ const UserService = {
 			}
 
 			// Apply sorting
-			// Why use -1/1? MongoDB sort syntax
-			// Why default to email? Consistent ordering
 			const sortField = sort.field || 'email';
 			const sortOrder = sort.order === 'desc' ? -1 : 1;
 			query = query.sort({ [sortField]: sortOrder });
 
-			// Exclude password from results
-			query = query.select('-password');
+			// Execute query and transform results
+			const users = await query.lean();
 
-			return await query.exec();
+			// Transform each user document
+			return users.map(user => ({
+				_id: user._id,
+				email: user.email,
+				role: user.role,
+				profile: user.profile,
+				createdAt: user.createdAt,
+				updatedAt: user.updatedAt
+			}));
+
 		} catch (error) {
 			throw new AppError('Error retrieving users', 500);
 		}
@@ -116,18 +120,55 @@ const UserService = {
 	},
 
 	async updateUserProfile(userId, profileData) {
-		return User.findByIdAndUpdate(
-			userId,
-			{ 
-				$set: { 
-					'profile': profileData 
-				} 
+		// First check if user exists
+		const user = await User.findById(userId);
+		if (!user) {
+			throw new AppError('User not found', 404);
+		}
+
+		// Handle partial updates for nested objects
+		const updatedProfile = {
+			firstName: profileData.firstName || user.profile?.firstName,
+			lastName: profileData.lastName || user.profile?.lastName,
+			phoneNumber: profileData.phoneNumber || user.profile?.phoneNumber,
+			address: profileData.address ? {
+				street: profileData.address.street || user.profile?.address?.street,
+				city: profileData.address.city || user.profile?.address?.city,
+				state: profileData.address.state || user.profile?.address?.state,
+				postalCode: profileData.address.postalCode || user.profile?.address?.postalCode,
+				country: profileData.address.country || user.profile?.address?.country
+			} : user.profile?.address
+		};
+
+		// Update only the fields that are provided
+		user.profile = updatedProfile;
+
+		// Save and return the updated user
+		const updatedUser = await user.save();
+		
+		// Return without sensitive data and reorder fields
+		return updatedUser.toObject({
+			transform: (doc, ret) => {
+				// Create new object with desired order
+				const ordered = {
+					_id: ret._id,
+					email: ret.email,
+					role: ret.role,
+					profile: ret.profile,
+					createdAt: ret.createdAt,
+					updatedAt: ret.updatedAt
+				};
+				
+				// Remove sensitive fields
+				delete ret.password;
+				delete ret.resetPasswordToken;
+				delete ret.resetPasswordExpires;
+				delete ret.__v;
+				
+				return ordered;
 			},
-			{ 
-				new: true, 
-				runValidators: true 
-			}
-		).select("-password");
+			versionKey: false // This also removes __v
+		});
 	}
 };
 

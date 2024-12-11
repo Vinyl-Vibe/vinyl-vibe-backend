@@ -36,6 +36,7 @@ function generateJWT(userId, email, role) {
     return jwt.sign(
         {
             _id: userId,
+            userId: userId,
             email,
             role,
             isAdmin: role === 'admin'

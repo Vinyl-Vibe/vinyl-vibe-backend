@@ -84,7 +84,8 @@ const ProductSchema = new mongoose.Schema(
         },
     },
     {
-        timestamps: true,             // Automatically add `createdAt` and `updatedAt` fields to track changes
+        timestamps: true,             // Automatically add `createdAt` and `updatedAt` fields
+        versionKey: false            // Removes __v field
     }
 );
 
