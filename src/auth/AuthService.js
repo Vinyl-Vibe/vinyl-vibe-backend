@@ -22,20 +22,6 @@ const AuthService = {
 		}
 	},
 
-	async validateToken(token) {
-		try {
-			return jwt.verify(token, process.env.JWT_SECRET);
-		} catch (error) {
-			if (error.name === 'JsonWebTokenError') {
-				throw new AppError('Invalid token', 401);
-			}
-			if (error.name === 'TokenExpiredError') {
-				throw new AppError('Token has expired', 401);
-			}
-			throw new AppError('Token validation error', 401);
-		}
-	},
-
 	async login({ email, password }) {
 		// First find user - separate error for missing user vs wrong password
 		// This is a security best practice to prevent user enumeration
