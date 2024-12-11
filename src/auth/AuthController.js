@@ -126,13 +126,15 @@ const AuthController = {
 			}
 
 			// Initiate password reset
-			// Note: This returns success even if email doesn't exist (security through obscurity)
 			await AuthService.initiatePasswordReset(email);
 
+			// Note: Always return success (security through obscurity)
 			res.json({
+				status: 'success',
 				message: 'If an account exists with that email, a password reset link has been sent.'
 			});
 		} catch (error) {
+			// Pass error to error handling middleware
 			next(error);
 		}
 	},

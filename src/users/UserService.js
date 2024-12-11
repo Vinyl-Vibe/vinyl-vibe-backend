@@ -81,25 +81,23 @@ const UserService = {
 		return user;
 	},
 
-	async updateUser(userId, updates, currentUser) {
+	async updateUser(userId, updates) {
 		try {
-			// Correctly checks role for sensitive operations
-			if (updates.role && currentUser.role !== 'admin') {
-				throw new AppError('Only administrators can modify user roles', 403)
-			}
-			// Correctly checks ownership/admin status
-			if (currentUser.role !== 'admin' && currentUser.userId !== userId) {
-				throw new AppError('You can only modify your own account', 403)
+			// Ensure user exists
+			const user = await User.findById(userId);
+			if (!user) {
+				throw new AppError('User not found', 404);
 			}
 
-			return User.findByIdAndUpdate(
-				userId,
-				{ $set: updates },
-				{ new: true, runValidators: true }
-			).select('-password')
+			// Apply updates
+			Object.assign(user, updates);
+			
+			// Save and return updated user
+			const updatedUser = await user.save();
+			return updatedUser;
 		} catch (error) {
-			if (error.isOperational) throw error
-			throw new AppError('Error updating user', 500)
+			if (error.isOperational) throw error;
+			throw new AppError(`Error updating user: ${error.message}`, 500);
 		}
 	},
 

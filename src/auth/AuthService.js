@@ -46,36 +46,41 @@ const AuthService = {
 	},
 
 	async initiatePasswordReset(email) {
-		// Find user and validate email exists
-		const user = await UserService.findUserByEmail(email)
-		if (!user) {
-			// Return success even if user not found (security best practice)
-			return
-		}
-
-		// Generate random token
-		const resetToken = crypto.randomBytes(32).toString('hex')
-		const hashedToken = crypto
-			.createHash('sha256')
-			.update(resetToken)
-			.digest('hex')
-
-		// Save hashed token to user
-		await UserService.updateUser(user._id, {
-			resetPasswordToken: hashedToken,
-			resetPasswordExpires: Date.now() + 3600000 // 1 hour
-		})
-
-		// Send reset email
 		try {
-			await EmailService.sendPasswordReset(email, resetToken)
-		} catch (error) {
-			// Revert token if email fails
+			// Find user and validate email exists
+			const user = await UserService.findUserByEmail(email)
+			if (!user) {
+				// Return success even if user not found (security best practice)
+				return
+			}
+
+			// Generate random token
+			const resetToken = crypto.randomBytes(32).toString('hex')
+			const hashedToken = crypto
+				.createHash('sha256')
+				.update(resetToken)
+				.digest('hex')
+
+			// Save hashed token to user
 			await UserService.updateUser(user._id, {
-				resetPasswordToken: null,
-				resetPasswordExpires: null
+				resetPasswordToken: hashedToken,
+				resetPasswordExpires: Date.now() + 3600000 // 1 hour
 			})
-			throw error
+
+			// Send reset email
+			try {
+				await EmailService.sendPasswordReset(email, resetToken)
+			} catch (error) {
+				// Revert token if email fails
+				await UserService.updateUser(user._id, {
+					resetPasswordToken: null,
+					resetPasswordExpires: null
+				})
+				throw new AppError('Failed to send password reset email', 500)
+			}
+		} catch (error) {
+			if (error.isOperational) throw error;
+			throw new AppError('Error initiating password reset', 500);
 		}
 	},
 
