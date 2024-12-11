@@ -24,25 +24,25 @@ const createProduct = async (request, response) => {
 	}
 };
 
-// Get all products with filtering and sorting
+// Get all products
 const getAllProducts = async (request, response) => {
-    try {
-        // Fetch products using the ProductService, passing query parameters
-        const products = await getAllProducts(request.query);
+	try {
+		// Fetch all products from the database
+		const products = await ProductModel.find();
 
-        // Send back the filtered and sorted list of products
-        return response.status(200).json({
-            success: true,
-            products,
-        });
-    } catch (error) {
-        // Handle any errors that might occur
-        console.error(error);
-        return response.status(500).json({
-            success: false,
-            message: "Server error. Unable to retrieve products.",
-        });
-    }
+		// Send back the list of products
+		return response.status(200).json({
+			success: true,
+			products,
+		});
+	} catch (error) {
+		// Handle any errors that might occur
+		console.error(error);
+		return response.status(500).json({
+			success: false,
+			message: "Server error. Unable to retrieve products.",
+		});
+	}
 };
 
 // Get a single product by ID
