@@ -61,7 +61,10 @@ if (APPLE_CLIENT_ID && APPLE_TEAM_ID && APPLE_KEY_ID) {
                 scope: 'name email',
                 responseType: 'code',
                 responseMode: 'form_post',
-                state: false
+                authorizationURL: 'https://appleid.apple.com/auth/authorize',
+                tokenURL: 'https://appleid.apple.com/auth/token',
+                state: false,
+                skipUserProfile: true
             },
             function(req, accessToken, refreshToken, idToken, profile, cb) {
                 try {

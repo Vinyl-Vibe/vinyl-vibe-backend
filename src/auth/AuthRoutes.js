@@ -73,6 +73,18 @@ router.post("/apple/callback", function (req, res, next) {
             failureMessage: true
         },
         function (err, user, info) {
+            // Enhanced error logging
+            if (err) {
+                console.error('Detailed Apple Auth Error:', {
+                    name: err.name,
+                    message: err.message,
+                    code: err.code,
+                    status: err.status,
+                    stack: err.stack,
+                    oauthError: err.oauthError
+                });
+            }
+
             // Debug authentication result
             console.log('Apple Auth Result:', {
                 hasError: !!err,
