@@ -51,16 +51,23 @@ passport.use(
 
                 if (user) {
                     // Add Apple login to existing user
-                    // If user doesn't have a name set and Apple provides it
                     if (!user.profile.firstName && req.body?.user?.name?.firstName) {
                         user.profile.firstName = req.body.user.name.firstName;
                         user.profile.lastName = req.body.user.name.lastName;
                     }
-                    user.socialLogins.push({
-                        provider: "apple",
-                        providerId: idToken.sub,
-                        email
-                    });
+                    // Check if this Apple login already exists
+                    const existingLogin = user.socialLogins.find(
+                        login => login.provider === 'apple' && login.providerId === idToken.sub
+                    );
+                    
+                    if (!existingLogin) {
+                        // Only add if it doesn't exist
+                        user.socialLogins.push({
+                            provider: "apple",
+                            providerId: idToken.sub,
+                            email
+                        });
+                    }
                     await user.save();
                     return done(null, user);
                 }

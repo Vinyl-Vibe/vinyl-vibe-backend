@@ -11,6 +11,7 @@ const express = require("express");
 const corsMiddleware = require("./utils/middleware/corsMiddleware");
 const passport = require("./auth/passport");
 const session = require("express-session");
+const MongoStore = require('connect-mongo');
 const authRoutes = require("./auth/AuthRoutes");
 const userRoutes = require("./users/UserRoutes");
 const cartRoutes = require("./cart/CartRoutes");
@@ -35,15 +36,20 @@ app.use(express.json()); // Parse JSON request bodies
 
 /**
  * Session configuration for Passport
- * Why use session?
- * - Required for OAuth flow
- * - Maintains state between requests
- * - Prevents CSRF attacks
+ * Why use MongoStore?
+ * - Persists sessions across server restarts
+ * - Scales across multiple processes
+ * - Better for production use than MemoryStore
  */
 app.use(session({
     secret: process.env.JWT_SECRET,
     resave: false,
     saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: process.env.DATABASE_URL,
+        ttl: 24 * 60 * 60, // Session TTL in seconds (1 day)
+        autoRemove: 'native' // Use MongoDB's TTL index
+    }),
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,

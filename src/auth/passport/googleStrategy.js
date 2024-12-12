@@ -45,11 +45,19 @@ passport.use(
                         user.profile.firstName = profile.name.givenName;
                         user.profile.lastName = profile.name.familyName;
                     }
-                    user.socialLogins.push({
-                        provider: "google",
-                        providerId: profile.id,
-                        email: profile.emails[0].value
-                    });
+                    // Check if this Google login already exists
+                    const existingLogin = user.socialLogins.find(
+                        login => login.provider === 'google' && login.providerId === profile.id
+                    );
+                    
+                    if (!existingLogin) {
+                        // Only add if it doesn't exist
+                        user.socialLogins.push({
+                            provider: "google",
+                            providerId: profile.id,
+                            email: profile.emails[0].value
+                        });
+                    }
                     await user.save();
                     return done(null, user);
                 }
