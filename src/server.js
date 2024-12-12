@@ -11,7 +11,8 @@ const express = require("express");
 const corsMiddleware = require("./utils/middleware/corsMiddleware");
 const passport = require("./auth/passport");
 const session = require("express-session");
-const bodyParser = require("body-parser");
+const MongoStore = require('connect-mongo');
+const bodyParser = require('body-parser');
 const authRoutes = require("./auth/AuthRoutes");
 const userRoutes = require("./users/UserRoutes");
 const cartRoutes = require("./cart/CartRoutes");
@@ -29,32 +30,53 @@ const { errorHandler } = require("./utils/middleware/errorMiddleware");
 const app = express();
 
 // Trust proxy - needed for secure callback URLs
-app.set("trust proxy", true);
+app.set('trust proxy', true);
 
 // Built-in middleware
 app.use(express.json()); // Parse JSON request bodies
-app.use(bodyParser.urlencoded({ extended: true }));
+
+// Add body-parser middleware specifically for Apple Sign In callback
+app.use('/auth/apple/callback', bodyParser.urlencoded({ extended: false }));
 
 /**
  * Session configuration for Passport
+ * Why use MongoStore?
+ * - Persists sessions across server restarts
+ * - Scales across multiple processes
+ * - Better for production use than MemoryStore
  */
-app.use(
-    session({
-        secret: process.env.SESSION_SECRET,
-        resave: false,
-        saveUninitialized: true,
-        cookie: {
-            secure: process.env.NODE_ENV === "production",
-            httpOnly: true,
-            sameSite: "none",
-            maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        },
-    })
-);
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    store: MongoStore.create({
+        mongoUrl: process.env.DATABASE_URL,
+        ttl: 24 * 60 * 60, // Session TTL in seconds (1 day)
+        autoRemove: 'native' // Use MongoDB's TTL index
+    }),
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        sameSite: 'none',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+}));
 
-// Initialize Passport
+// Initialize Passport and restore authentication state from session
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Debug middleware for session
+if (process.env.NODE_ENV !== 'production') {
+    app.use((req, res, next) => {
+        console.log('Session:', {
+            id: req.sessionID,
+            hasSession: !!req.session,
+            hasPassport: !!req.session?.passport
+        });
+        next();
+    });
+}
 
 /**
  * Middleware order matters!

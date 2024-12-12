@@ -38,43 +38,83 @@ router.get(
 
 // Apple Sign In Routes
 router.get("/apple", (req, res, next) => {
+    if (!passport._strategies.apple) {
+        return res.status(503).json({
+            status: 'error',
+            message: 'Apple Sign In is not configured'
+        });
+    }
     passport.authenticate("apple")(req, res, next);
 });
 
 router.post("/apple/callback", function (req, res, next) {
+    console.log('Apple Callback Debug:', {
+        session: !!req.session,
+        sessionID: req.sessionID,
+        body: req.body,
+        cookies: req.headers.cookie
+    });
+
+    if (!passport._strategies.apple) {
+        return res.status(503).json({
+            status: 'error',
+            message: 'Apple Sign In is not configured'
+        });
+    }
+    // Log any error query parameters from Apple
+    if (req.query.error) {
+        console.error('Apple auth error:', req.query.error);
+    }
+
     passport.authenticate(
         "apple",
         {
-            session: false
+            failureRedirect: "/auth/error",
+            failureMessage: true
         },
         function (err, user, info) {
+            // Enhanced error logging
+            if (err) {
+                console.error('Detailed Apple Auth Error:', {
+                    name: err.name,
+                    message: err.message,
+                    code: err.code,
+                    status: err.status,
+                    stack: err.stack,
+                    oauthError: err.oauthError
+                });
+            }
+
+            // Debug authentication result
+            console.log('Apple Auth Result:', {
+                hasError: !!err,
+                errorType: err?.constructor?.name,
+                errorMessage: err?.message,
+                hasUser: !!user,
+                info
+            });
+
             if (err) {
                 if (err === "AuthorizationError") {
-                    return res.status(401).json({
-                        status: 'error',
-                        message: 'Authorization failed'
-                    });
+                    return res.redirect("/auth/error?reason=authorization");
                 } else if (err === "TokenError") {
-                    return res.status(401).json({
-                        status: 'error',
-                        message: 'Token validation failed'
-                    });
+                    return res.redirect("/auth/error?reason=token");
                 }
-                return res.status(500).json({
-                    status: 'error',
-                    message: err.message || 'Unknown error'
-                });
+                // Log the actual error
+                console.error('Apple Auth Error:', err);
+                return res.redirect("/auth/error?reason=unknown");
+            }
+
+            if (!user) {
+                console.log('No user returned from Apple auth');
+                return res.redirect("/auth/error?reason=no_user");
             }
 
             // Update user's name if provided (only happens on first sign in)
             if (req.body.user && user.profile) {
-                user.profile.firstName =
-                    req.body.user.name?.firstName || user.profile.firstName;
-                user.profile.lastName =
-                    req.body.user.name?.lastName || user.profile.lastName;
-                user.save().catch((err) =>
-                    console.error("Error saving user profile:", err)
-                );
+                user.profile.firstName = req.body.user.name?.firstName || user.profile.firstName;
+                user.profile.lastName = req.body.user.name?.lastName || user.profile.lastName;
+                user.save().catch(err => console.error('Error saving user profile:', err));
             }
 
             // Generate JWT token and redirect to frontend
@@ -114,18 +154,18 @@ router.get("/refresh", validateUserAuth, AuthController.refresh);
 router.get("/me", validateUserAuth, AuthController.getCurrentUser);
 
 // Error handling route
-router.get("/error", (req, res) => {
-    const reason = req.query.reason || "unknown";
+router.get('/error', (req, res) => {
+    const reason = req.query.reason || 'unknown';
     const errorMessages = {
-        authorization: "Authorization failed",
-        token: "Token validation failed",
-        no_user: "No user found",
-        unknown: "An unknown error occurred",
+        authorization: 'Authorization failed',
+        token: 'Token validation failed',
+        no_user: 'No user found',
+        unknown: 'An unknown error occurred'
     };
 
     res.status(400).json({
-        status: "error",
-        message: errorMessages[reason] || errorMessages.unknown,
+        status: 'error',
+        message: errorMessages[reason] || errorMessages.unknown
     });
 });
 
