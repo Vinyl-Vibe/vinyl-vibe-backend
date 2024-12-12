@@ -18,6 +18,15 @@ const APPLE_KEY_ID = process.env.APPLE_KEY_ID;
 const APPLE_CALLBACK_URL = process.env.APPLE_CALLBACK_URL;
 const PRIVATE_KEY_PATH = '/etc/secrets/apple-private-key.p8';
 
+// Debug environment variables
+console.log('Apple Auth Config:', {
+    hasClientId: !!APPLE_CLIENT_ID,
+    hasTeamId: !!APPLE_TEAM_ID,
+    hasKeyId: !!APPLE_KEY_ID,
+    hasCallbackUrl: !!APPLE_CALLBACK_URL,
+    privateKeyPath: PRIVATE_KEY_PATH
+});
+
 // Only initialize Apple strategy if all required credentials are present
 if (APPLE_CLIENT_ID && APPLE_TEAM_ID && APPLE_KEY_ID) {
     passport.use(
