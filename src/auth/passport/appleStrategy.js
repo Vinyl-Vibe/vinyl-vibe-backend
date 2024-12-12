@@ -2,6 +2,7 @@ const passport = require("passport");
 const AppleStrategy = require("passport-apple");
 const { User } = require("../../users/UserModel");
 const path = require('path');
+const fs = require('fs');
 
 /**
  * Apple Sign In Strategy
@@ -18,6 +19,18 @@ const APPLE_KEY_ID = process.env.APPLE_KEY_ID;
 const APPLE_CALLBACK_URL = process.env.APPLE_CALLBACK_URL;
 const PRIVATE_KEY_PATH = '/etc/secrets/apple-private-key.p8';
 
+// Check if private key file exists
+try {
+    const keyExists = fs.existsSync(PRIVATE_KEY_PATH);
+    console.log(`Private key file ${keyExists ? 'exists' : 'does not exist'} at ${PRIVATE_KEY_PATH}`);
+    if (keyExists) {
+        const keyContents = fs.readFileSync(PRIVATE_KEY_PATH, 'utf8');
+        console.log('Key file starts with:', keyContents.substring(0, 27)); // Just show the BEGIN marker
+    }
+} catch (error) {
+    console.error('Error checking private key file:', error);
+}
+
 // Debug environment variables
 console.log('Apple Auth Config:', {
     hasClientId: !!APPLE_CLIENT_ID,
@@ -29,6 +42,13 @@ console.log('Apple Auth Config:', {
 
 // Only initialize Apple strategy if all required credentials are present
 if (APPLE_CLIENT_ID && APPLE_TEAM_ID && APPLE_KEY_ID) {
+    console.log('Initializing Apple Strategy with:', {
+        clientID: APPLE_CLIENT_ID,
+        teamID: APPLE_TEAM_ID,
+        keyID: APPLE_KEY_ID,
+        callbackURL: APPLE_CALLBACK_URL
+    });
+
     passport.use(
         new AppleStrategy(
             {
@@ -40,84 +60,88 @@ if (APPLE_CLIENT_ID && APPLE_TEAM_ID && APPLE_KEY_ID) {
                 passReqToCallback: true
             },
             function(req, accessToken, refreshToken, idToken, profile, cb) {
-                console.log('Apple callback received:', {
-                    hasAccessToken: !!accessToken,
-                    hasIdToken: !!idToken,
-                    hasProfile: !!profile,
-                    body: req.body,
-                    idTokenContent: idToken ? JSON.stringify(idToken) : 'No ID Token'
-                });
+                try {
+                    console.log('Apple callback received:', {
+                        hasAccessToken: !!accessToken,
+                        hasIdToken: !!idToken,
+                        hasProfile: !!profile,
+                        body: req.body,
+                        idTokenContent: idToken ? JSON.stringify(idToken) : 'No ID Token'
+                    });
 
-                // The idToken is encoded - need to access properties safely
-                if (!idToken || !idToken.sub) {
-                    console.error('Invalid ID Token:', idToken);
-                    return cb(new Error('Invalid Apple ID token'));
-                }
-
-                const email = idToken.email;
-                const providerId = idToken.sub;
-
-                if (!email) {
-                    return cb(new Error('No email provided from Apple'));
-                }
-
-                // Check if user exists with Apple ID
-                User.findOne({
-                    "socialLogins.provider": "apple",
-                    "socialLogins.providerId": providerId,
-                }).then(user => {
-                    if (user) {
-                        // Add Apple login to existing user
-                        if (!user.profile.firstName && req.body?.user?.name?.firstName) {
-                            user.profile.firstName = req.body.user.name.firstName;
-                            user.profile.lastName = req.body.user.name.lastName;
-                        }
-                        // Check if this Apple login already exists
-                        const existingLogin = user.socialLogins.find(
-                            login => login.provider === 'apple' && login.providerId === providerId
-                        );
-                        
-                        if (!existingLogin) {
-                            // Only add if it doesn't exist
-                            user.socialLogins.push({
-                                provider: "apple",
-                                providerId: providerId,
-                                email
-                            });
-                        }
-                        user.save().then(() => cb(null, user));
-                        return;
+                    // The idToken is encoded - need to access properties safely
+                    if (!idToken || !idToken.sub) {
+                        console.error('Invalid ID Token:', idToken);
+                        return cb(new Error('Invalid Apple ID token'));
                     }
 
-                    // Check if user exists with same email
-                    User.findOne({ email }).then(user => {
+                    const email = idToken.email;
+                    const providerId = idToken.sub;
+
+                    if (!email) {
+                        return cb(new Error('No email provided from Apple'));
+                    }
+
+                    // Check if user exists with Apple ID
+                    User.findOne({
+                        "socialLogins.provider": "apple",
+                        "socialLogins.providerId": providerId,
+                    }).then(user => {
                         if (user) {
                             // Add Apple login to existing user
-                            user.socialLogins.push({
-                                provider: "apple",
-                                providerId: providerId,
-                                email,
-                            });
+                            if (!user.profile.firstName && req.body?.user?.name?.firstName) {
+                                user.profile.firstName = req.body.user.name.firstName;
+                                user.profile.lastName = req.body.user.name.lastName;
+                            }
+                            // Check if this Apple login already exists
+                            const existingLogin = user.socialLogins.find(
+                                login => login.provider === 'apple' && login.providerId === providerId
+                            );
+                            
+                            if (!existingLogin) {
+                                // Only add if it doesn't exist
+                                user.socialLogins.push({
+                                    provider: "apple",
+                                    providerId: providerId,
+                                    email
+                                });
+                            }
                             user.save().then(() => cb(null, user));
                             return;
                         }
-                        
-                        // Create new user
-                        User.create({
-                            email,
-                            profile: {
-                                firstName: req.body?.user?.name?.firstName || '',
-                                lastName: req.body?.user?.name?.lastName || '',
-                            },
-                            socialLogins: [{
-                                provider: "apple",
-                                providerId: providerId,
+
+                        // Check if user exists with same email
+                        User.findOne({ email }).then(user => {
+                            if (user) {
+                                // Add Apple login to existing user
+                                user.socialLogins.push({
+                                    provider: "apple",
+                                    providerId: providerId,
+                                    email,
+                                });
+                                user.save().then(() => cb(null, user));
+                                return;
+                            }
+                            
+                            // Create new user
+                            User.create({
                                 email,
-                            }],
-                        }).then(newUser => cb(null, newUser))
-                          .catch(err => cb(err));
+                                profile: {
+                                    firstName: req.body?.user?.name?.firstName || '',
+                                    lastName: req.body?.user?.name?.lastName || '',
+                                },
+                                socialLogins: [{
+                                    provider: "apple",
+                                    providerId: providerId,
+                                    email,
+                                }],
+                            }).then(newUser => cb(null, newUser))
+                              .catch(err => cb(err));
+                        }).catch(err => cb(err));
                     }).catch(err => cb(err));
-                }).catch(err => cb(err));
+                } catch (error) {
+                    cb(error);
+                }
             }
         )
     );
