@@ -56,4 +56,7 @@ router.post("/reset-password", AuthController.resetPassword);
 // - Ensures user still exists and has access
 router.get("/refresh", validateUserAuth, AuthController.refresh);
 
+// Get current user data
+router.get("/me", validateUserAuth, AuthController.getCurrentUser);
+
 module.exports = router;
