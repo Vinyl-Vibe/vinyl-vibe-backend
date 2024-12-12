@@ -1,13 +1,13 @@
 meta {
-    name: Add item to cart
-    type: http
-    seq: 2
+  name: Add item to cart
+  type: http
+  seq: 2
 }
 
 post {
-    url: http://localhost:8080/cart
-    body: json
-    auth: inherit
+  url: http://{{base_url}}/cart
+  body: json
+  auth: inherit
 }
 
 body:json {

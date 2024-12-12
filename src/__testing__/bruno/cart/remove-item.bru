@@ -1,10 +1,11 @@
 meta {
-    name: Remove Item from Cart
-    type: http
-    seq: 4
+  name: Remove Item from Cart
+  type: http
+  seq: 4
 }
 
 delete {
-    url: http://localhost:8080/cart/67596bb44c8dcc755fd78974
-    auth: inherit
+  url: http://{{base_url}}/cart/67596bb44c8dcc755fd78974
+  body: none
+  auth: inherit
 }

@@ -1,10 +1,11 @@
 meta {
-    name: Get Current Users Cart
-    type: http
-    seq: 1
+  name: Get Current Users Cart
+  type: http
+  seq: 1
 }
 
 get {
-    url: http://localhost:8080/cart
-    auth: inherit
-} 
+  url: http://{{base_url}}/cart
+  body: none
+  auth: inherit
+}

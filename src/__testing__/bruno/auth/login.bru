@@ -5,14 +5,14 @@ meta {
 }
 
 post {
-  url: http://localhost:8080/auth/login
+  url: http://{{base_url}}/auth/login
   body: json
   auth: none
 }
 
 body:json {
   {
-    "email": "test2@example.com",
+    "email": "test@example.com",
     "password": "password123"
   }
 }
