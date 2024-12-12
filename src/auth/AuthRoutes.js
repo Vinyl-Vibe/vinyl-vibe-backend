@@ -36,7 +36,7 @@ router.get('/apple', passport.authenticate('apple', {
     scope: ['name', 'email']
 }));
 
-router.get('/apple/callback',
+router.post('/apple/callback',
     passport.authenticate('apple', { session: false }),
     AuthController.socialLoginCallback
 );
