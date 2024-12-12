@@ -33,8 +33,6 @@ passport.use(
             scope: ["email", "name"],
             responseMode: "form_post",
             responseType: "code id_token",
-            defaultAudience: APPLE_CLIENT_ID,
-            defaultScope: ["name", "email"],
             passReqToCallback: true,
         },
         async (req, accessToken, refreshToken, idToken, profile, done) => {
