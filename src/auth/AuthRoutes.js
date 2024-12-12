@@ -48,6 +48,13 @@ router.get("/apple", (req, res, next) => {
 });
 
 router.post("/apple/callback", function (req, res, next) {
+    console.log('Apple Callback Debug:', {
+        session: !!req.session,
+        sessionID: req.sessionID,
+        body: req.body,
+        cookies: req.headers.cookie
+    });
+
     if (!passport._strategies.apple) {
         return res.status(503).json({
             status: 'error',

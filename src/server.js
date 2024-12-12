@@ -48,7 +48,7 @@ app.use('/auth/apple/callback', bodyParser.urlencoded({ extended: false }));
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,
     store: MongoStore.create({
         mongoUrl: process.env.DATABASE_URL,
         ttl: 24 * 60 * 60, // Session TTL in seconds (1 day)
@@ -57,6 +57,7 @@ app.use(session({
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
+        sameSite: 'none',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));

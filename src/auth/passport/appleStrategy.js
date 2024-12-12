@@ -61,7 +61,7 @@ if (APPLE_CLIENT_ID && APPLE_TEAM_ID && APPLE_KEY_ID) {
                 scope: 'name email',
                 responseType: 'code',
                 responseMode: 'form_post',
-                state: true
+                state: false
             },
             function(req, accessToken, refreshToken, idToken, profile, cb) {
                 try {
