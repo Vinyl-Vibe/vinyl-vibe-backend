@@ -4,7 +4,7 @@ const {
     getAllOrders, 
     updateOrder, 
     deleteOrder 
-} = require('./OrderServices');
+} = require("./OrderServices");
 
 // Controller for creating a new order
 const createOrder = async (req, res) => {

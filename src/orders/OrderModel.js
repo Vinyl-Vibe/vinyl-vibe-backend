@@ -1,5 +1,5 @@
 // Import Mongoose for defining the schema
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 // Create the order schema
 const OrderSchema = new mongoose.Schema(
