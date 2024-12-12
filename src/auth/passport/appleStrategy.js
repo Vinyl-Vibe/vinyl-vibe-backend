@@ -8,26 +8,21 @@ const APPLE_CLIENT_ID = process.env.APPLE_CLIENT_ID;
 const APPLE_TEAM_ID = process.env.APPLE_TEAM_ID;
 const APPLE_KEY_ID = process.env.APPLE_KEY_ID;
 const APPLE_CALLBACK_URL = process.env.APPLE_CALLBACK_URL;
+const PRIVATE_KEY = fs.readFileSync('/etc/secrets/apple-private-key.p8', 'utf8')
 
-// Debug environment variables
-console.log("Apple Auth Config:", {
-    hasClientId: !!APPLE_CLIENT_ID,
-    hasTeamId: !!APPLE_TEAM_ID,
-    hasKeyId: !!APPLE_KEY_ID,
-    hasCallbackUrl: !!APPLE_CALLBACK_URL,
-});
 
 passport.use(
     new AppleStrategy(
         {
             clientID: APPLE_CLIENT_ID,
             teamId: APPLE_TEAM_ID,
-            keyID: APPLE_KEY_ID,
+            keyId: APPLE_KEY_ID,
+            privateKey: PRIVATE_KEY,
             clientSecret:
                 "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjU2NkI5QkpKRloifQ.eyJpc3MiOiJRUlIzNTM5Q0o5IiwiaWF0IjoxNzM0MDE5NTY5LCJleHAiOjE3NDE3OTU1NjksImF1ZCI6Imh0dHBzOi8vYXBwbGVpZC5hcHBsZS5jb20iLCJzdWIiOiJsaXZlLnZpbnlsdmliZS5hdXRoIn0.Xma6YjzN--ktdGYCaZ7IUxndYFVobTUTYuQXBrt9ib6Twd19P1TNdTmQ6SvwK7HigzF-1MMVQMzWdKCKmf4gaQ",
             callbackURL: APPLE_CALLBACK_URL,
             passReqToCallback: true,
-            scope: ["name", "email"],
+            scope: "name email",
             responseMode: "form_post",
             state: false,
             skipUserProfile: true,
