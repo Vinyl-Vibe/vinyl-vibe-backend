@@ -53,17 +53,16 @@ router.post("/apple/callback", function (req, res, next) {
             message: 'Apple Sign In is not configured'
         });
     }
-    // Debug incoming request
-    console.log('Apple Callback Request:', {
-        body: req.body,
-        method: req.method,
-        headers: req.headers
-    });
+    // Log any error query parameters from Apple
+    if (req.query.error) {
+        console.error('Apple auth error:', req.query.error);
+    }
 
     passport.authenticate(
         "apple",
         {
             failureRedirect: "/auth/error",
+            failureMessage: true
         },
         function (err, user, info) {
             // Debug authentication result
@@ -133,5 +132,21 @@ router.get("/refresh", validateUserAuth, AuthController.refresh);
 
 // Get current user data
 router.get("/me", validateUserAuth, AuthController.getCurrentUser);
+
+// Error handling route
+router.get('/error', (req, res) => {
+    const reason = req.query.reason || 'unknown';
+    const errorMessages = {
+        authorization: 'Authorization failed',
+        token: 'Token validation failed',
+        no_user: 'No user found',
+        unknown: 'An unknown error occurred'
+    };
+
+    res.status(400).json({
+        status: 'error',
+        message: errorMessages[reason] || errorMessages.unknown
+    });
+});
 
 module.exports = router;

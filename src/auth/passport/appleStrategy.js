@@ -57,7 +57,11 @@ if (APPLE_CLIENT_ID && APPLE_TEAM_ID && APPLE_KEY_ID) {
                 keyID: APPLE_KEY_ID,
                 privateKeyLocation: PRIVATE_KEY_PATH,
                 callbackURL: APPLE_CALLBACK_URL,
-                passReqToCallback: true
+                passReqToCallback: true,
+                scope: 'name email',
+                responseType: 'code',
+                responseMode: 'form_post',
+                state: true
             },
             function(req, accessToken, refreshToken, idToken, profile, cb) {
                 try {
@@ -66,7 +70,7 @@ if (APPLE_CLIENT_ID && APPLE_TEAM_ID && APPLE_KEY_ID) {
                         hasIdToken: !!idToken,
                         hasProfile: !!profile,
                         body: req.body,
-                        idTokenContent: idToken ? JSON.stringify(idToken) : 'No ID Token'
+                        error: req.query.error
                     });
 
                     // The idToken is encoded - need to access properties safely
