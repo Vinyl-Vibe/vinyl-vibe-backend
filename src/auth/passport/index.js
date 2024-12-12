@@ -25,16 +25,10 @@ passport.serializeUser((user, done) => {
 // - Convert identifier back to user object
 // - Fetch fresh user data
 // - Ensure up-to-date user info
-passport.deserializeUser(async (id, done) => {
-    try {
-        const user = await User.findById(id);
-        if (!user) {
-            return done(null, false);
-        }
-        done(null, user);
-    } catch (error) {
-        done(error);
-    }
+passport.deserializeUser((id, done) => {
+    User.findById(id)
+        .then(user => done(null, user))
+        .catch(err => done(err));
 });
 
 // Import strategies

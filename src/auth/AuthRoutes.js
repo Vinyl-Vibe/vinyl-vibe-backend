@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const AuthController = require("./AuthController");
+const AuthService = require("./AuthService");
 const { validateUserAuth } = require("./AuthMiddleware");
 const rateLimit = require("express-rate-limit");
 const passport = require("./passport");
@@ -97,7 +98,7 @@ router.post("/apple/callback", function (req, res, next) {
                 user.save().catch(err => console.error('Error saving user profile:', err));
             }
 
-            // Generate token and redirect
+            // Generate JWT token and redirect to frontend
             AuthService.generateToken(user)
                 .then((token) => {
                     const frontendUrl =
