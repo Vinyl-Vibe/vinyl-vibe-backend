@@ -1,10 +1,12 @@
+const OrderService = require("./OrderService")
+
 const { 
     createOrder, 
     getOrder, 
     getAllOrders, 
     updateOrder, 
     deleteOrder 
-} = require("./OrderServices");
+} = require("./OrderService");
 
 // Controller for creating a new order
 const createOrder = async (req, res) => {
