@@ -43,12 +43,14 @@ if (APPLE_CLIENT_ID && APPLE_TEAM_ID && APPLE_KEY_ID) {
                 teamId: APPLE_TEAM_ID,
                 keyID: APPLE_KEY_ID,
                 key: fs.readFileSync(PRIVATE_KEY_PATH, 'utf8'),
+                privateKeyString: fs.readFileSync(PRIVATE_KEY_PATH, 'utf8'),
                 callbackURL: APPLE_CALLBACK_URL,
                 passReqToCallback: true,
                 scope: ["name", "email"],
                 responseMode: "form_post",
                 state: false,
                 skipUserProfile: true,
+                debug: true
             },
             function (req, accessToken, refreshToken, idToken, profile, cb) {
                 try {
@@ -59,7 +61,8 @@ if (APPLE_CLIENT_ID && APPLE_TEAM_ID && APPLE_KEY_ID) {
                         body: req.body,
                         error: req.query.error,
                         tokenError: req.query.error,
-                        code: req.body.code
+                        code: req.body.code,
+                        hasKey: !!fs.readFileSync(PRIVATE_KEY_PATH, 'utf8')
                     });
 
                     // The idToken is encoded - need to access properties safely
@@ -166,4 +169,16 @@ if (APPLE_CLIENT_ID && APPLE_TEAM_ID && APPLE_KEY_ID) {
     console.warn(
         "Apple Sign In credentials missing - Apple authentication will be unavailable"
     );
+}
+
+// Verify key file
+try {
+    const keyContent = fs.readFileSync(PRIVATE_KEY_PATH, 'utf8');
+    console.log('Key file loaded:', {
+        length: keyContent.length,
+        startsWithHeader: keyContent.startsWith('-----BEGIN PRIVATE KEY-----'),
+        endsWithFooter: keyContent.endsWith('-----END PRIVATE KEY-----\n')
+    });
+} catch (error) {
+    console.error('Error reading key file:', error);
 }
