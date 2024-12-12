@@ -17,6 +17,7 @@ const APPLE_CLIENT_ID = process.env.APPLE_CLIENT_ID;
 const APPLE_TEAM_ID = process.env.APPLE_TEAM_ID;
 const APPLE_KEY_ID = process.env.APPLE_KEY_ID;
 const APPLE_CALLBACK_URL = process.env.APPLE_CALLBACK_URL;
+const PRIVATE_KEY_PATH = "/etc/secrets/apple-key.p8";
 
 // Debug environment variables
 console.log("Apple Auth Config:", {
@@ -41,7 +42,7 @@ if (APPLE_CLIENT_ID && APPLE_TEAM_ID && APPLE_KEY_ID) {
                 clientID: APPLE_CLIENT_ID,
                 teamId: APPLE_TEAM_ID,
                 keyID: APPLE_KEY_ID,
-                privateKeyString: process.env.APPLE_PRIVATE_KEY,
+                privateKeyLocation: PRIVATE_KEY_PATH,
                 callbackURL: APPLE_CALLBACK_URL,
                 passReqToCallback: true,
                 scope: ["name", "email"],
