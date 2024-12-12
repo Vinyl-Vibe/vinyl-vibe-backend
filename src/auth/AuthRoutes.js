@@ -36,26 +36,58 @@ router.get(
 );
 
 // Apple Sign In Routes
-router.get("/apple", passport.authenticate("apple"));
-
+router.get("/apple", (req, res, next) => {
+    if (!passport._strategies.apple) {
+        return res.status(503).json({
+            status: 'error',
+            message: 'Apple Sign In is not configured'
+        });
+    }
+    passport.authenticate("apple")(req, res, next);
+});
 
 router.post("/apple/callback", function (req, res, next) {
+    if (!passport._strategies.apple) {
+        return res.status(503).json({
+            status: 'error',
+            message: 'Apple Sign In is not configured'
+        });
+    }
+    // Debug incoming request
+    console.log('Apple Callback Request:', {
+        body: req.body,
+        method: req.method,
+        headers: req.headers
+    });
+
     passport.authenticate(
         "apple",
         {
             failureRedirect: "/auth/error",
         },
         function (err, user, info) {
+            // Debug authentication result
+            console.log('Apple Auth Result:', {
+                hasError: !!err,
+                errorType: err?.constructor?.name,
+                errorMessage: err?.message,
+                hasUser: !!user,
+                info
+            });
+
             if (err) {
                 if (err === "AuthorizationError") {
                     return res.redirect("/auth/error?reason=authorization");
                 } else if (err === "TokenError") {
                     return res.redirect("/auth/error?reason=token");
                 }
-                return next(err);
+                // Log the actual error
+                console.error('Apple Auth Error:', err);
+                return res.redirect("/auth/error?reason=unknown");
             }
 
             if (!user) {
+                console.log('No user returned from Apple auth');
                 return res.redirect("/auth/error?reason=no_user");
             }
 
