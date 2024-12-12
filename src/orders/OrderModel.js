@@ -40,6 +40,12 @@ const OrderSchema = new mongoose.Schema(
           required: true,
           min: 1, // Ensure at least one unit is ordered
         },
+
+        // Snapshot of the product name at the time of the order
+        productName: {
+          type: String,
+          required: true,
+        },
       },
     ],
 
@@ -48,6 +54,16 @@ const OrderSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 0,
+      validate: {
+        validator: function () {
+          const calculatedTotal = this.products.reduce(
+            (sum, product) => sum + product.unitPrice * product.quantity,
+            0
+          );
+          return this.total === calculatedTotal;
+        },
+        message: 'Total must equal the sum of unit prices multiplied by quantities.'
+      },
     },
 
     // Status of the order
