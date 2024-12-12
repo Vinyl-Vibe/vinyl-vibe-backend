@@ -46,7 +46,7 @@ app.use('/auth/apple/callback', bodyParser.urlencoded({ extended: false }));
  * - Better for production use than MemoryStore
  */
 app.use(session({
-    secret: process.env.JWT_SECRET,
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
@@ -64,6 +64,18 @@ app.use(session({
 // Initialize Passport and restore authentication state from session
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Debug middleware for session
+if (process.env.NODE_ENV !== 'production') {
+    app.use((req, res, next) => {
+        console.log('Session:', {
+            id: req.sessionID,
+            hasSession: !!req.session,
+            hasPassport: !!req.session?.passport
+        });
+        next();
+    });
+}
 
 /**
  * Middleware order matters!
