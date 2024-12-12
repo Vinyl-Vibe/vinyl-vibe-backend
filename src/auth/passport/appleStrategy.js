@@ -30,9 +30,9 @@ passport.use(
             privateKeyString: APPLE_PRIVATE_KEY,
             callbackURL: APPLE_CALLBACK_URL,
             proxy: true,
-            scope: "name email",
+            scope: ["email", "name"],
             responseMode: "form_post",
-            responseType: "code",
+            responseType: ["code", "id_token"],
             passReqToCallback: true,
             authorizationURL: 'https://appleid.apple.com/auth/authorize',
             tokenURL: 'https://appleid.apple.com/auth/token',
@@ -40,8 +40,20 @@ passport.use(
         },
         async (req, accessToken, refreshToken, idToken, profile, done) => {
             try {
+                // Debug the incoming data
+                console.log('Apple Auth Data:', {
+                    accessToken: !!accessToken,
+                    idToken: !!idToken,
+                    profile: !!profile,
+                    body: req.body
+                });
+
                 // Apple only provides email and name on first login
-                const email = idToken.email;
+                const email = idToken?.email || req.body?.email;
+
+                if (!email) {
+                    return done(new Error('No email provided from Apple'));
+                }
 
                 // Check if user exists with Apple ID
                 let user = await User.findOne({
