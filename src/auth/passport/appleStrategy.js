@@ -45,20 +45,10 @@ if (APPLE_CLIENT_ID && APPLE_TEAM_ID && APPLE_KEY_ID) {
                 callbackURL: APPLE_CALLBACK_URL,
                 passReqToCallback: true,
                 scope: ["name", "email"],
-                responseType: "code",
                 responseMode: "form_post",
-                authorizationURL: "https://appleid.apple.com/auth/authorize",
-                tokenURL: "https://appleid.apple.com/auth/token",
                 state: false,
                 skipUserProfile: true,
                 generateClientSecret: true,
-                jwtConfig: {
-                    issuer: APPLE_TEAM_ID,
-                    audience: "https://appleid.apple.com",
-                    expiresIn: "180d",
-                    algorithm: "ES256",
-                    subject: APPLE_CLIENT_ID,
-                },
             },
             function (req, accessToken, refreshToken, idToken, profile, cb) {
                 try {
