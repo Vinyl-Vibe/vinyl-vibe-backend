@@ -30,10 +30,13 @@ passport.use(
             privateKeyString: APPLE_PRIVATE_KEY,
             callbackURL: APPLE_CALLBACK_URL,
             proxy: true,
-            scope: ["email", "name"],
+            scope: "name email",
             responseMode: "form_post",
-            responseType: "code id_token",
+            responseType: "code",
             passReqToCallback: true,
+            authorizationURL: 'https://appleid.apple.com/auth/authorize',
+            tokenURL: 'https://appleid.apple.com/auth/token',
+            verifyURL: 'https://appleid.apple.com/auth/keys'
         },
         async (req, accessToken, refreshToken, idToken, profile, done) => {
             try {
