@@ -70,7 +70,8 @@ if (APPLE_CLIENT_ID && APPLE_TEAM_ID && APPLE_KEY_ID) {
                         hasIdToken: !!idToken,
                         hasProfile: !!profile,
                         body: req.body,
-                        error: req.query.error
+                        error: req.query.error,
+                        idTokenContent: idToken
                     });
 
                     // The idToken is encoded - need to access properties safely
@@ -81,6 +82,12 @@ if (APPLE_CLIENT_ID && APPLE_TEAM_ID && APPLE_KEY_ID) {
 
                     const email = idToken.email;
                     const providerId = idToken.sub;
+
+                    console.log('Attempting to create/find user with:', {
+                        email,
+                        providerId,
+                        hasUserData: !!req.body.user
+                    });
 
                     if (!email) {
                         return cb(new Error('No email provided from Apple'));
