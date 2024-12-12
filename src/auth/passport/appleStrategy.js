@@ -8,7 +8,7 @@ const APPLE_CLIENT_ID = process.env.APPLE_CLIENT_ID;
 const APPLE_TEAM_ID = process.env.APPLE_TEAM_ID;
 const APPLE_KEY_ID = process.env.APPLE_KEY_ID;
 const APPLE_CALLBACK_URL = process.env.APPLE_CALLBACK_URL;
-const PRIVATE_KEY = fs.readFileSync('/etc/secrets/apple-private-key.p8', 'utf8')
+const PRIVATE_KEY = fs.readFileSync('/etc/secrets/apple-key.p8', 'utf8')
 
 
 passport.use(
