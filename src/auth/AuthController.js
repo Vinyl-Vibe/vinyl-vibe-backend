@@ -179,7 +179,56 @@ const AuthController = {
 		} catch (error) {
 			next(error);
 		}
-	}
+	},
+
+	/**
+	 * Handle social login callbacks (Google & Apple)
+	 * 
+	 * Why common callback handler?
+	 * - Both providers follow same pattern after authentication
+	 * - Reduces code duplication
+	 * - Consistent token generation and response
+	 */
+	async socialLoginCallback(req, res, next) {
+		try {
+			// User object is attached by Passport strategy
+			const user = req.user;
+
+			if (!user) {
+				throw new AppError('Authentication failed', 401);
+			}
+
+			// Generate JWT token
+			const token = await AuthService.generateToken(user);
+
+			// In production, redirect to frontend with token
+			if (process.env.NODE_ENV === 'production') {
+				// Redirect to frontend with token
+				return res.redirect(`https://vinylvibe.live/auth/callback?token=${token}`);
+			}
+
+			// In development, return JSON response
+			res.json({
+				token,
+				user: {
+					id: user._id,
+					email: user.email,
+					role: user.role,
+					profile: user.profile,
+					socialLogins: user.socialLogins.map(login => ({
+						provider: login.provider,
+						email: login.email
+					}))
+				}
+			});
+		} catch (error) {
+			// In case of error, redirect to frontend error page
+			if (process.env.NODE_ENV === 'production') {
+				return res.redirect('https://vinylvibe.live/auth/error');
+			}
+			next(error);
+		}
+	},
 };
 
 module.exports = AuthController;

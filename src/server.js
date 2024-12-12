@@ -9,6 +9,8 @@
 
 const express = require("express");
 const corsMiddleware = require("./utils/middleware/corsMiddleware");
+const passport = require("./auth/passport");
+const session = require("express-session");
 const authRoutes = require("./auth/AuthRoutes");
 const userRoutes = require("./users/UserRoutes");
 const cartRoutes = require("./cart/CartRoutes");
@@ -25,8 +27,33 @@ const { errorHandler } = require("./utils/middleware/errorMiddleware");
  */
 const app = express();
 
+// Trust proxy - needed for secure callback URLs
+app.set('trust proxy', true);
+
 // Built-in middleware
 app.use(express.json()); // Parse JSON request bodies
+
+/**
+ * Session configuration for Passport
+ * Why use session?
+ * - Required for OAuth flow
+ * - Maintains state between requests
+ * - Prevents CSRF attacks
+ */
+app.use(session({
+    secret: process.env.JWT_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+}));
+
+// Initialize Passport and restore authentication state from session
+app.use(passport.initialize());
+app.use(passport.session());
 
 /**
  * Middleware order matters!

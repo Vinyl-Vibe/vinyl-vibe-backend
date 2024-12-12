@@ -3,6 +3,7 @@ const router = express.Router();
 const AuthController = require("./AuthController");
 const { validateUserAuth } = require("./AuthMiddleware");
 const rateLimit = require('express-rate-limit')
+const passport = require('./passport');
 
 /**
  * Auth routes handle user authentication flows
@@ -18,6 +19,27 @@ const rateLimit = require('express-rate-limit')
 router.post("/register", AuthController.register);
 router.post("/login", AuthController.login);
 router.post("/logout", AuthController.logout);
+
+// Social Login Routes
+// Google OAuth Routes
+router.get('/google', passport.authenticate('google', {
+    scope: ['profile', 'email']
+}));
+
+router.get('/google/callback',
+    passport.authenticate('google', { session: false }),
+    AuthController.socialLoginCallback
+);
+
+// Apple Sign In Routes
+router.get('/apple', passport.authenticate('apple', {
+    scope: ['name', 'email']
+}));
+
+router.get('/apple/callback',
+    passport.authenticate('apple', { session: false }),
+    AuthController.socialLoginCallback
+);
 
 // Password reset routes (public)
 const passwordResetLimiter = rateLimit({
