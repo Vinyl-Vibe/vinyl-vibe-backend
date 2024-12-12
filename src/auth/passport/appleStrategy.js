@@ -19,22 +19,6 @@ const APPLE_KEY_ID = process.env.APPLE_KEY_ID;
 const APPLE_CALLBACK_URL = process.env.APPLE_CALLBACK_URL;
 const PRIVATE_KEY_PATH = "/etc/secrets/apple-private-key.p8";
 
-// Check if private key file exists
-try {
-    const keyExists = fs.existsSync(PRIVATE_KEY_PATH);
-    console.log(
-        `Private key file ${
-            keyExists ? "exists" : "does not exist"
-        } at ${PRIVATE_KEY_PATH}`
-    );
-    if (keyExists) {
-        const keyContents = fs.readFileSync(PRIVATE_KEY_PATH, "utf8");
-        console.log("Key file starts with:", keyContents.substring(0, 27)); // Just show the BEGIN marker
-    }
-} catch (error) {
-    console.error("Error checking private key file:", error);
-}
-
 // Debug environment variables
 console.log("Apple Auth Config:", {
     hasClientId: !!APPLE_CLIENT_ID,
@@ -59,25 +43,9 @@ if (APPLE_CLIENT_ID && APPLE_TEAM_ID && APPLE_KEY_ID) {
                 clientID: APPLE_CLIENT_ID,
                 teamId: APPLE_TEAM_ID,
                 keyID: APPLE_KEY_ID,
-                privateKeyLocation: PRIVATE_KEY_PATH,
+                privateKeyString: process.env.APPLE_PRIVATE_KEY,
                 callbackURL: APPLE_CALLBACK_URL,
                 passReqToCallback: true,
-                scope: ["name", "email"],
-                responseType: "code",
-                responseMode: "form_post",
-                authorizationURL: "https://appleid.apple.com/auth/authorize",
-                tokenURL: "https://appleid.apple.com/auth/token",
-                state: false,
-                skipUserProfile: true,
-                generateClientSecret: true,
-                privateKeyString: fs.readFileSync(PRIVATE_KEY_PATH, "utf8"),
-                jwtConfig: {
-                    issuer: APPLE_TEAM_ID,
-                    audience: "https://appleid.apple.com",
-                    expiresIn: "180d", // 180 days - Apple's maximum
-                    algorithm: "ES256",
-                    subject: APPLE_CLIENT_ID,
-                },
             },
             function (req, accessToken, refreshToken, idToken, profile, cb) {
                 try {
