@@ -214,6 +214,11 @@ const AuthController = {
             // Generate JWT token
             const token = await AuthService.generateToken(user);
 
+            // Clear any existing session
+            if (req.session) {
+                req.session.destroy();
+            }
+
             // Redirect to frontend with token for both dev and prod
             const frontendUrl =
                 process.env.NODE_ENV === "production"

@@ -27,10 +27,10 @@ passport.use(
             clientID: APPLE_CLIENT_ID,
             teamID: APPLE_TEAM_ID,
             keyID: APPLE_KEY_ID,
-            privateKeyString: APPLE_PRIVATE_KEY,
+            privateKeyString: APPLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
             callbackURL: APPLE_CALLBACK_URL,
             proxy: true,
-            scope: ["email", "name"],
+            scope: ["name", "email"],
             responseMode: "form_post",
             responseType: ["code", "id_token"],
             passReqToCallback: true,
@@ -40,16 +40,9 @@ passport.use(
         },
         async (req, accessToken, refreshToken, idToken, profile, done) => {
             try {
-                // Debug the incoming data
-                console.log('Apple Auth Data:', {
-                    accessToken: !!accessToken,
-                    idToken: !!idToken,
-                    profile: !!profile,
-                    body: req.body
-                });
-
-                // Apple only provides email and name on first login
-                const email = idToken?.email || req.body?.email;
+                // Important: Apple only provides name on first sign in
+                const email = idToken.email;
+                const providerId = idToken.sub;
 
                 if (!email) {
                     return done(new Error('No email provided from Apple'));
@@ -58,7 +51,7 @@ passport.use(
                 // Check if user exists with Apple ID
                 let user = await User.findOne({
                     "socialLogins.provider": "apple",
-                    "socialLogins.providerId": idToken.sub,
+                    "socialLogins.providerId": providerId,
                 });
 
                 if (user) {
@@ -69,14 +62,14 @@ passport.use(
                     }
                     // Check if this Apple login already exists
                     const existingLogin = user.socialLogins.find(
-                        login => login.provider === 'apple' && login.providerId === idToken.sub
+                        login => login.provider === 'apple' && login.providerId === providerId
                     );
                     
                     if (!existingLogin) {
                         // Only add if it doesn't exist
                         user.socialLogins.push({
                             provider: "apple",
-                            providerId: idToken.sub,
+                            providerId: providerId,
                             email
                         });
                     }
@@ -91,7 +84,7 @@ passport.use(
                     // Add Apple login to existing user
                     user.socialLogins.push({
                         provider: "apple",
-                        providerId: idToken.sub,
+                        providerId: providerId,
                         email,
                     });
                     await user.save();
@@ -109,7 +102,7 @@ passport.use(
                     socialLogins: [
                         {
                             provider: "apple",
-                            providerId: idToken.sub,
+                            providerId: providerId,
                             email,
                         },
                     ],

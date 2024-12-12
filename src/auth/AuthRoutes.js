@@ -32,19 +32,30 @@ router.get('/google/callback',
 );
 
 // Apple Sign In Routes
-router.get('/apple', passport.authenticate('apple', {
-    scope: ['name', 'email']
-}));
+router.get('/apple', passport.authenticate('apple'));
 
-router.post('/apple/callback',
-    passport.authenticate('apple', { session: false }),
-    AuthController.socialLoginCallback
-);
-
-router.get('/apple/callback',
-    passport.authenticate('apple', { session: false }),
-    AuthController.socialLoginCallback
-);
+router.post('/apple/callback', function(req, res, next) {
+    passport.authenticate('apple', function(err, user, info) {
+        if (err) {
+            if (err === "AuthorizationError") {
+                return res.redirect('/auth/error?reason=authorization');
+            } else if (err === "TokenError") {
+                return res.redirect('/auth/error?reason=token');
+            }
+            return next(err);
+        }
+        
+        // Generate token and redirect
+        AuthService.generateToken(user)
+            .then(token => {
+                const frontendUrl = process.env.NODE_ENV === 'production'
+                    ? 'https://vinylvibe.live'
+                    : 'http://localhost:5173';
+                res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
+            })
+            .catch(next);
+    })(req, res, next);
+});
 
 // Password reset routes (public)
 const passwordResetLimiter = rateLimit({
