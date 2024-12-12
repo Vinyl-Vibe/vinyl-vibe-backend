@@ -27,3 +27,9 @@ router.put("/orders/:orderId", updateOrder);
 router.delete("/orders/:orderId", deleteOrder);
 
 module.exports = router;
+
+
+// Model: Defines the schema (structure) for data.
+// Service: Contains logic for manipulating data (CRUD operations).
+// Controller: Handles HTTP requests, delegates logic to the service and sends back responses.
+// Routes: Maps HTTP requests to controller functions.

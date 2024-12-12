@@ -11,8 +11,8 @@ const {
 // Controller for creating a new order
 const createOrder = async (req, res) => {
     try {
-        const orderData = req.body; // Get the order data from the request body
-        const newOrder = await createOrder(orderData); // Create order using service
+        const orderData = req.body; // Get order data from request body
+        const newOrder = await createOrder(orderData); // Create the order using the service
 
         res.status(201).json({
             success: true,
@@ -20,13 +20,14 @@ const createOrder = async (req, res) => {
             order: newOrder,
         });
     } catch (err) {
-        console.error(err);
+        console.error("Error in createOrder:", err);
         res.status(500).json({
             success: false,
             message: "Server error, unable to create order",
         });
     }
 };
+
 
 // Controller for getting a specific order by ID
 const getOrderById = async (req, res) => {
@@ -46,13 +47,14 @@ const getOrderById = async (req, res) => {
             order,
         });
     } catch (err) {
-        console.error(err);
+        console.error("Error in getOrderById:", err);
         res.status(500).json({
             success: false,
             message: "Server error, unable to fetch order",
         });
     }
 };
+
 
 // Controller for getting all orders with optional filtering
 const getAllOrders = async (req, res) => {
