@@ -21,7 +21,10 @@ const UserSchema = new mongoose.Schema(
 		},
 		password: {
 			type: String,
-			required: true,
+			required: function() {
+				// Password only required if no social logins
+				return this.socialLogins.length === 0;
+			},
 			minLength: 8,
 			trim: true,
 		},
@@ -51,6 +54,26 @@ const UserSchema = new mongoose.Schema(
 				country: String
 			}
 		},
+		socialLogins: [{
+			provider: {
+				type: String,
+				enum: ['google', 'apple'],
+				required: true
+			},
+			providerId: {
+				type: String,
+				required: true
+			},
+			email: {
+				type: String,
+				required: true
+			},
+			// Store additional provider-specific data
+			profile: {
+				type: mongoose.Schema.Types.Mixed,
+				default: {}
+			}
+		}],
 		resetPasswordToken: String,
 		resetPasswordExpires: Date
 	},
@@ -65,6 +88,10 @@ const UserSchema = new mongoose.Schema(
 					email: ret.email,
 					role: ret.role,
 					profile: ret.profile,
+					socialLogins: ret.socialLogins.map(login => ({
+						provider: login.provider,
+						email: login.email
+					})),
 					createdAt: ret.createdAt,
 					updatedAt: ret.updatedAt
 				};
@@ -85,6 +112,10 @@ const UserSchema = new mongoose.Schema(
 					email: ret.email,
 					role: ret.role,
 					profile: ret.profile,
+					socialLogins: ret.socialLogins.map(login => ({
+						provider: login.provider,
+						email: login.email
+					})),
 					createdAt: ret.createdAt,
 					updatedAt: ret.updatedAt
 				};
@@ -105,7 +136,8 @@ const UserSchema = new mongoose.Schema(
 // - Works for all save operations
 // - Keeps password handling with User model
 UserSchema.pre("save", async function (next) {
-	if (!this.isModified("password")) return next();
+	// Only hash password if it exists and was modified
+	if (!this.password || !this.isModified("password")) return next();
 	try {
 		const salt = await bcrypt.genSalt(10);
 		this.password = await bcrypt.hash(this.password, salt);
@@ -120,6 +152,8 @@ UserSchema.pre("save", async function (next) {
 // - bcrypt.compare is async
 // - Better performance for server
 UserSchema.methods.comparePassword = async function (candidatePassword) {
+	// If no password set (social login only), always return false
+	if (!this.password) return false;
 	return bcrypt.compare(candidatePassword, this.password);
 };
 
