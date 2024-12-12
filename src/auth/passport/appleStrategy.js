@@ -42,14 +42,13 @@ if (APPLE_CLIENT_ID && APPLE_TEAM_ID && APPLE_KEY_ID) {
                 clientID: APPLE_CLIENT_ID,
                 teamId: APPLE_TEAM_ID,
                 keyID: APPLE_KEY_ID,
-                privateKeyLocation: PRIVATE_KEY_PATH,
+                key: fs.readFileSync(PRIVATE_KEY_PATH, 'utf8'),
                 callbackURL: APPLE_CALLBACK_URL,
                 passReqToCallback: true,
                 scope: ["name", "email"],
                 responseMode: "form_post",
                 state: false,
                 skipUserProfile: true,
-                generateClientSecret: true,
             },
             function (req, accessToken, refreshToken, idToken, profile, cb) {
                 try {
@@ -59,7 +58,8 @@ if (APPLE_CLIENT_ID && APPLE_TEAM_ID && APPLE_KEY_ID) {
                         hasProfile: !!profile,
                         body: req.body,
                         error: req.query.error,
-                        idTokenContent: idToken,
+                        tokenError: req.query.error,
+                        code: req.body.code
                     });
 
                     // The idToken is encoded - need to access properties safely
