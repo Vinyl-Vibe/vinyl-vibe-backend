@@ -24,12 +24,20 @@ const createProduct = async (request, response, next) => {
 // Get all products (with optional filter by type)
 const getAllProducts = async (request, response, next) => {
     try {
-        // Pass query parameters to the service
-        const products = await ProductService.getAllProducts(request.query);
+        const result = await ProductService.getAllProducts(request.query);
 
+        // Check if result includes pagination metadata
+        if (result.pagination) {
+            return response.status(200).json({
+                success: true,
+                ...result
+            });
+        }
+
+        // Return regular response for non-paginated results
         return response.status(200).json({
             success: true,
-            products,
+            products: result
         });
     } catch (error) {
         next(new AppError("Failed to retrieve products", 500));

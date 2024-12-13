@@ -90,20 +90,36 @@ const getAllProducts = async (queryParams) => {
             });
         }
 
-        // Complex URL Examples combining multiple parameters:
-        // /products?type=vinyl&search=Pink Floyd&price-min=20&price-max=50&in-stock=true
-        // (Find in-stock vinyl records by Pink Floyd between $20-$50)
+        // Handle pagination if page and limit are provided
+        if (queryParams.page || queryParams.limit) {
+            const page = parseInt(queryParams.page) || 1;
+            const limit = parseInt(queryParams.limit) || 10;
+            const skip = (page - 1) * limit;
 
-        // /products?type=turntable&price-min=200&sort=price&order=asc
-        // (Find turntables $200 and above, sorted by price low to high)
+            productsQuery = productsQuery.skip(skip).limit(limit);
 
-        // /products?search=Beatles&in-stock=true&sort=name&order=asc
-        // (Find in-stock Beatles items, sorted alphabetically)
+            // Get total count for pagination metadata
+            const total = await ProductModel.countDocuments(query);
 
-        // Execute the query and return results
+            // Execute the query
+            const products = await productsQuery;
+
+            // Return pagination metadata along with products
+            return {
+                products,
+                pagination: {
+                    currentPage: page,
+                    totalPages: Math.ceil(total / limit),
+                    totalProducts: total,
+                    productsPerPage: limit
+                }
+            };
+        }
+
+        // If no pagination requested, return all products
         return await productsQuery;
     } catch (error) {
-        throw new Error(`Error retrieving products: ${error.message}`);
+        throw error;
     }
 };
 
