@@ -12,7 +12,6 @@ const corsMiddleware = require("./utils/middleware/corsMiddleware");
 const passport = require("./auth/passport");
 const session = require("express-session");
 const MongoStore = require("connect-mongo");
-const bodyParser = require("body-parser");
 const authRoutes = require("./auth/AuthRoutes");
 const userRoutes = require("./users/UserRoutes");
 const cartRoutes = require("./cart/CartRoutes");
@@ -34,9 +33,6 @@ app.set("trust proxy", true);
 
 // Built-in middleware
 app.use(express.json()); // Parse JSON request bodies
-
-// Add body-parser middleware specifically for Apple Sign In callback
-app.use("/auth/apple/callback", bodyParser.urlencoded({ extended: false }));
 
 /**
  * Session configuration for Passport

@@ -33,6 +33,5 @@ passport.deserializeUser((id, done) => {
 
 // Import strategies
 require("./googleStrategy");
-require("./appleStrategy");
 
 module.exports = passport;

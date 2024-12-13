@@ -195,7 +195,7 @@ const AuthController = {
     },
 
     /**
-     * Handle social login callbacks (Google & Apple)
+     * Handle social login callbacks (Google)
      *
      * Why common callback handler?
      * - Both providers follow same pattern after authentication
