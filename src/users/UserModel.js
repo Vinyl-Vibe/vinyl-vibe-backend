@@ -57,7 +57,7 @@ const UserSchema = new mongoose.Schema(
 		socialLogins: [{
 			provider: {
 				type: String,
-				enum: ['google', 'apple'],
+				enum: ['google'],
 				required: true
 			},
 			providerId: {
