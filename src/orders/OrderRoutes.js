@@ -29,16 +29,16 @@ router.get("/", getAllOrders);
 
 // GET route to fetch a specific order by ID
 // Applies `validateOrderId` to ensure the order ID in the params is valid
-router.get("/orders/:orderId", validateOrderId, getOrderById);
+router.get("/:orderId", validateOrderId, getOrderById);
 
 // PUT route to update an existing order by ID
 // Applies `validateOrderId` to validate the ID, `normaliseOrderStatus` to format the status,
 // and `validateOrderPayload` to ensure the data being updated is valid
-router.put("/orders/:orderId", validateOrderId, normaliseOrderStatus, validateOrderPayload, updateOrder);
+router.put("/:orderId", validateOrderId, normaliseOrderStatus, validateOrderPayload, updateOrder);
 
 // DELETE route to cancel an order by ID
 // Applies `validateOrderId` to ensure the order ID is valid
-router.delete("/orders/:orderId", validateOrderId, deleteOrder);
+router.delete("/:orderId", validateOrderId, deleteOrder);
 
 module.exports = router;
 
