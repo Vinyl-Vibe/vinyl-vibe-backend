@@ -10,22 +10,22 @@ const cors = require("cors");
  */
 
 const corsOptions = {
-	// Whitelist of allowed origins
-	// Why array instead of single origin?
-	// - Support multiple environments
-	// - Allow both local development and production
-	origin: [
-		"http://localhost:8080", // CRA local development
-		"http://localhost:5173", // Vite local development
-		"https://vinylvibe.live", // Production front-end
-	],
+    // Whitelist of allowed origins
+    // Why array instead of single origin?
+    // - Support multiple environments
+    // - Allow both local development and production
+    origin: [
+        "http://localhost:8080", // CRA local development
+        "http://localhost:5173", // Vite local development
+        "https://vinylvibe.live", // Production front-end
+    ],
 
-	// Success status configuration
-	// Why 200 instead of 204?
-	// - Better compatibility with older browsers
-	// - Consistent response across all clients
-	// - Avoids issues with empty responses
-	optionsSuccessStatus: 200,
+    // Success status configuration
+    // Why 200 instead of 204?
+    // - Better compatibility with older browsers
+    // - Consistent response across all clients
+    // - Avoids issues with empty responses
+    optionsSuccessStatus: 200,
 };
 
 // Create middleware using cors package

@@ -1,0 +1,15 @@
+meta {
+  name: Search products by keywords
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://{{base_url}}/products?search=words
+  body: none
+  auth: none
+}
+
+params:query {
+  search: words
+}
