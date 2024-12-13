@@ -28,7 +28,7 @@ const ProductSchema = new mongoose.Schema(
         // Type of product (must be one of the specified types)
         type: {
             type: String,
-            enum: ["vinyl", "turntable", "accessory", "speaker"], // Only these types are allowed
+            enum: ["vinyl", "turntable", "accessory", "merch"], // Only these types are allowed
             required: true,          // Field must be provided
         },
         

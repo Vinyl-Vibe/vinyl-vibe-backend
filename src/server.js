@@ -84,14 +84,28 @@ if (process.env.NODE_ENV !== "production") {
  * 3. Routes - Process the actual request
  * 4. Error handling - Must be last to catch all errors
  */
-app.use(corsMiddleware);
+app.use(express.json()); // Parse JSON bodies first
+app.use(corsMiddleware); // CORS headers next
+
+// Session middleware
+app.use(session({
+    // ... session config
+}));
+
+// Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Routes with their auth middleware
 app.use("/auth", authRoutes);
+app.use("/products", productRoutes); // This uses JWT auth
 app.use("/users", userRoutes);
 app.use("/cart", cartRoutes);
-app.use("/products", productRoutes);
 
-// Error handling middleware - must be last
+// Error handling last
 app.use(errorHandler);
+
+console.log('JWT_SECRET is set:', !!process.env.JWT_SECRET);
 
 module.exports = {
     app,

@@ -23,21 +23,20 @@ const { CartModel } = require('../../cart/CartModel');
 const requireRole = (...roles) => {
     return (req, res, next) => {
         try {
-            // Check if user exists and has role property
-            // Why check user object?
-            // - Ensures auth middleware ran first
-            // - Validates token data structure
-            // - Prevents undefined errors
+            // Debug logs
+            console.log('Incoming request user:', req.user);
+            console.log('Required roles:', roles);
+            console.log('User role:', req.user?.role);
+            
             if (!req.user || !req.user.role) {
+                console.log('Authentication failed - no user or role');
                 throw new AppError('User not authenticated', 401);
             }
 
-            // Check if user has required role
-            // Why includes instead of equality?
-            // - Supports multiple role requirements
-            // - More flexible permission system
-            // - Future-proof for role hierarchies
             if (!roles.includes(req.user.role)) {
+                console.log('Authorization failed - role mismatch');
+                console.log('User role:', req.user.role);
+                console.log('Required roles:', roles);
                 throw new AppError('Insufficient permissions', 403);
             }
 
