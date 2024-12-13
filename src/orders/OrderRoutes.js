@@ -3,6 +3,14 @@ const express = require("express");
 // Initialize the router
 const router = express.Router();
 
+// Import middleware
+const {
+    validateOrderPayload,
+    validateOrderId,
+    normalizeOrderStatus
+} = require("./OrderMiddleware");
+
+// Import controller functions
 const {
     createOrder,
     getOrderById,
@@ -12,22 +20,27 @@ const {
 } = require("./OrderController");
 
 // POST route to create a new order
-router.post("/orders", createOrder);
+// Applies `normalizeOrderStatus` to format the status and `validateOrderPayload` to ensure valid data
+router.post("/orders", normalizeOrderStatus, validateOrderPayload, createOrder);
 
 // GET route to fetch all orders (with optional query params for filtering)
+// No middleware is needed here as this endpoint fetches orders without requiring payload validation
 router.get("/orders", getAllOrders);
 
 // GET route to fetch a specific order by ID
-router.get("/orders/:orderId", getOrderById);
+// Applies `validateOrderId` to ensure the order ID in the params is valid
+router.get("/orders/:orderId", validateOrderId, getOrderById);
 
 // PUT route to update an existing order by ID
-router.put("/orders/:orderId", updateOrder);
+// Applies `validateOrderId` to validate the ID, `normalizeOrderStatus` to format the status,
+// and `validateOrderPayload` to ensure the data being updated is valid
+router.put("/orders/:orderId", validateOrderId, normalizeOrderStatus, validateOrderPayload, updateOrder);
 
 // DELETE route to cancel an order by ID
-router.delete("/orders/:orderId", deleteOrder);
+// Applies `validateOrderId` to ensure the order ID is valid
+router.delete("/orders/:orderId", validateOrderId, deleteOrder);
 
 module.exports = router;
-
 
 // Model: Defines the schema (structure) for data.
 // Service: Contains logic for manipulating data (CRUD operations).
