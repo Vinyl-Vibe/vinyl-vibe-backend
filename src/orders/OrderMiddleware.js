@@ -39,6 +39,9 @@ const validateOrderPayload = (request, response, next) => {
 const validateOrderId = (request, response, next) => {
     const { orderId } = request.params;
 
+    // Check if the `orderId` is missing or does not match the expected MongoDB ObjectId format.
+    // A valid MongoDB ObjectId is a 24-character hexadecimal string.
+    // If the validation fails, respond with a 400 status code and an error message.
     if (!orderId || !/^[a-fA-F0-9]{24}$/.test(orderId)) {
         return response.status(400).json({
             success: false,
