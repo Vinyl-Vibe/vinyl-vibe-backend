@@ -7,7 +7,7 @@ const router = express.Router();
 const {
     validateOrderPayload,
     validateOrderId,
-    normalizeOrderStatus
+    normaliseOrderStatus
 } = require("./OrderMiddleware");
 
 // Import controller functions
@@ -20,8 +20,8 @@ const {
 } = require("./OrderController");
 
 // POST route to create a new order
-// Applies `normalizeOrderStatus` to format the status and `validateOrderPayload` to ensure valid data
-router.post("/orders", normalizeOrderStatus, validateOrderPayload, createOrder);
+// Applies `normaliseOrderStatus` to format the status and `validateOrderPayload` to ensure valid data
+router.post("/orders", normaliseOrderStatus, validateOrderPayload, createOrder);
 
 // GET route to fetch all orders (with optional query params for filtering)
 // No middleware is needed here as this endpoint fetches orders without requiring payload validation
@@ -32,9 +32,9 @@ router.get("/orders", getAllOrders);
 router.get("/orders/:orderId", validateOrderId, getOrderById);
 
 // PUT route to update an existing order by ID
-// Applies `validateOrderId` to validate the ID, `normalizeOrderStatus` to format the status,
+// Applies `validateOrderId` to validate the ID, `normaliseOrderStatus` to format the status,
 // and `validateOrderPayload` to ensure the data being updated is valid
-router.put("/orders/:orderId", validateOrderId, normalizeOrderStatus, validateOrderPayload, updateOrder);
+router.put("/orders/:orderId", validateOrderId, normaliseOrderStatus, validateOrderPayload, updateOrder);
 
 // DELETE route to cancel an order by ID
 // Applies `validateOrderId` to ensure the order ID is valid
