@@ -25,7 +25,7 @@ router.post("/", normaliseOrderStatus, validateOrderPayload, createOrder);
 
 // GET route to fetch all orders (with optional query params for filtering)
 // No middleware is needed here as this endpoint fetches orders without requiring payload validation
-router.get("/orders", getAllOrders);
+router.get("/", getAllOrders);
 
 // GET route to fetch a specific order by ID
 // Applies `validateOrderId` to ensure the order ID in the params is valid
