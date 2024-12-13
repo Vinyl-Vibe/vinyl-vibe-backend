@@ -13,7 +13,7 @@ const authRoutes = require("./auth/AuthRoutes");
 const userRoutes = require("./users/UserRoutes");
 const cartRoutes = require("./cart/CartRoutes");
 const productRoutes = require("./products/ProductRoutes");
-const orderRoutes = require("./orders/OrderRoutes")
+const orderRoutes = require("./orders/OrderRoutes");
 const { errorHandler } = require("./utils/middleware/errorMiddleware");
 
 /**
