@@ -21,7 +21,7 @@ const {
 
 // POST route to create a new order
 // Applies `normaliseOrderStatus` to format the status and `validateOrderPayload` to ensure valid data
-router.post("/orders", normaliseOrderStatus, validateOrderPayload, createOrder);
+router.post("/", normaliseOrderStatus, validateOrderPayload, createOrder);
 
 // GET route to fetch all orders (with optional query params for filtering)
 // No middleware is needed here as this endpoint fetches orders without requiring payload validation
