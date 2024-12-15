@@ -81,19 +81,81 @@ const UserService = {
 		return user;
 	},
 
-	async updateUser(userId, updates) {
+	async updateUser(userId, updates, currentUser) {
 		try {
-			// Ensure user exists
-			const user = await User.findById(userId);
-			if (!user) {
+			// Check if user exists first
+			const userToUpdate = await User.findById(userId);
+			if (!userToUpdate) {
 				throw new AppError('User not found', 404);
 			}
 
-			// Apply updates
-			Object.assign(user, updates);
-			
-			// Save and return updated user
-			const updatedUser = await user.save();
+			// Only allow self-update or admin update
+			if (currentUser.role !== 'admin' && currentUser._id !== userId) {
+				throw new AppError('You can only update your own profile', 403);
+			}
+
+			// Define which fields can be updated via PATCH
+			const allowedUpdates = [
+				'email',
+				'profile.firstName',
+				'profile.lastName',
+				'profile.phoneNumber',
+				'profile.address.street',
+				'profile.address.city',
+				'profile.address.state',
+				'profile.address.postalCode',
+				'profile.address.country'
+			];
+
+			// Only admins can update role
+			if (currentUser.role === 'admin') {
+				allowedUpdates.push('role');
+			}
+
+			// Transform nested updates if profile is included
+			const transformedUpdates = Object.keys(updates).reduce((acc, key) => {
+				if (key === 'profile') {
+					// Handle nested profile updates
+					Object.keys(updates.profile).forEach(profileKey => {
+						if (profileKey === 'address') {
+							// Handle nested address updates
+							Object.keys(updates.profile.address).forEach(addressKey => {
+								const fullPath = `profile.address.${addressKey}`;
+								if (allowedUpdates.includes(fullPath)) {
+									acc[fullPath] = updates.profile.address[addressKey];
+								}
+							});
+						} else {
+							const fullPath = `profile.${profileKey}`;
+							if (allowedUpdates.includes(fullPath)) {
+								acc[fullPath] = updates.profile[profileKey];
+							}
+						}
+					});
+				} else {
+					// Handle top-level updates
+					if (allowedUpdates.includes(key)) {
+						acc[key] = updates[key];
+					}
+				}
+				return acc;
+			}, {});
+
+			// Use findByIdAndUpdate with $set for partial updates
+			const updatedUser = await User.findByIdAndUpdate(
+					userId,
+					{ $set: transformedUpdates },
+					{ 
+						new: true,          // Return updated document
+						runValidators: true, // Run schema validators
+						select: '-password -resetPasswordToken -resetPasswordExpires' // Exclude sensitive fields
+					}
+			);
+
+			if (!updatedUser) {
+				throw new AppError('User not found', 404);
+			}
+
 			return updatedUser;
 		} catch (error) {
 			if (error.isOperational) throw error;
@@ -118,55 +180,45 @@ const UserService = {
 	},
 
 	async updateUserProfile(userId, profileData) {
-		// First check if user exists
-		const user = await User.findById(userId);
-		if (!user) {
-			throw new AppError('User not found', 404);
+		try {
+			// Define which fields can be updated via PATCH
+			const allowedUpdates = [
+				'profile.firstName',
+				'profile.lastName',
+				'profile.phoneNumber',
+				'profile.address.street',
+				'profile.address.city',
+				'profile.address.state',
+				'profile.address.postalCode',
+				'profile.address.country'
+			]
+
+			// Transform the incoming data to match the nested structure
+			const transformedData = Object.keys(profileData).reduce((updates, key) => {
+				// Add the 'profile.' prefix to the field names
+				updates[`profile.${key}`] = profileData[key]
+				return updates
+			}, {})
+
+			// Use findByIdAndUpdate with $set to only update provided fields
+			const updatedUser = await User.findByIdAndUpdate(
+				userId,
+				{ $set: transformedData },
+				{ 
+					new: true,          // Return updated document
+					runValidators: true, // Run schema validators on update
+					select: '-password -resetPasswordToken -resetPasswordExpires' // Exclude sensitive fields
+				}
+			)
+
+			if (!updatedUser) {
+				throw new AppError('User not found', 404)
+			}
+
+			return updatedUser
+		} catch (error) {
+			throw error
 		}
-
-		// Handle partial updates for nested objects
-		const updatedProfile = {
-			firstName: profileData.firstName || user.profile?.firstName,
-			lastName: profileData.lastName || user.profile?.lastName,
-			phoneNumber: profileData.phoneNumber || user.profile?.phoneNumber,
-			address: profileData.address ? {
-				street: profileData.address.street || user.profile?.address?.street,
-				city: profileData.address.city || user.profile?.address?.city,
-				state: profileData.address.state || user.profile?.address?.state,
-				postalCode: profileData.address.postalCode || user.profile?.address?.postalCode,
-				country: profileData.address.country || user.profile?.address?.country
-			} : user.profile?.address
-		};
-
-		// Update only the fields that are provided
-		user.profile = updatedProfile;
-
-		// Save and return the updated user
-		const updatedUser = await user.save();
-		
-		// Return without sensitive data and reorder fields
-		return updatedUser.toObject({
-			transform: (doc, ret) => {
-				// Create new object with desired order
-				const ordered = {
-					_id: ret._id,
-					email: ret.email,
-					role: ret.role,
-					profile: ret.profile,
-					createdAt: ret.createdAt,
-					updatedAt: ret.updatedAt
-				};
-				
-				// Remove sensitive fields
-				delete ret.password;
-				delete ret.resetPasswordToken;
-				delete ret.resetPasswordExpires;
-				delete ret.__v;
-				
-				return ordered;
-			},
-			versionKey: false // This also removes __v
-		});
 	}
 };
 

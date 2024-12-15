@@ -4,7 +4,7 @@ meta {
   seq: 5
 }
 
-put {
+patch {
   url: http://{{base_url}}/users/profile
   body: json
   auth: inherit
@@ -12,15 +12,6 @@ put {
 
 body:json {
   {
-    "firstName": "John",
-    "lastName": "Doe",
-    "phoneNumber": "+1234567890",
-    "address": {
-      "street": "123 Main Street",
-      "city": "Springfield",
-      "state": "IL",
-      "postalCode": "12345",
-      "country": "USA"
-    }
+    "firstName": "NewName"
   }
 }

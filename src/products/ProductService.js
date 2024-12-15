@@ -140,17 +140,36 @@ const getProductById = async (productId) => {
 
 /**
  * Update product in database
- * Why use findByIdAndUpdate?
+ * Why use $set for updates?
+ * - Only updates specified fields
+ * - Maintains other fields unchanged
  * - Atomic operation prevents race conditions
- * - Returns updated document
- * - Handles validation automatically
  */
-const updateProduct = async (productId, productData) => {
+const updateProduct = async (productId, updates) => {
     try {
+        // First check if product exists
+        const existingProduct = await ProductModel.findById(productId);
+        if (!existingProduct) {
+            throw new AppError("Product not found", 404);
+        }
+
+        // Handle nested albumInfo updates
+        if (updates.albumInfo) {
+            // Only update provided albumInfo fields
+            updates.albumInfo = {
+                ...existingProduct.albumInfo.toObject(),
+                ...updates.albumInfo
+            };
+        }
+
+        // Use findByIdAndUpdate with $set for partial updates
         const updatedProduct = await ProductModel.findByIdAndUpdate(
             productId,
-            productData,
-            { new: true, runValidators: true }
+            { $set: updates },
+            { 
+                new: true,          // Return updated document
+                runValidators: true // Run schema validators
+            }
         );
 
         if (!updatedProduct) {
@@ -159,7 +178,7 @@ const updateProduct = async (productId, productData) => {
 
         return updatedProduct;
     } catch (error) {
-        if (error instanceof AppError) throw error;
+        if (error.isOperational) throw error;
         throw new AppError(`Error updating product: ${error.message}`, 500);
     }
 };

@@ -29,7 +29,7 @@ router.get("/:id", getProductById);
 // - Prevents duplicate middleware execution
 // - Cleaner route definitions
 router.post("/", validateUserAuth, requireAdmin, createProduct);
-router.put("/:id", validateUserAuth, requireAdmin, updateProduct);
+router.patch("/:id", validateUserAuth, requireAdmin, updateProduct);
 router.delete("/:id", validateUserAuth, requireAdmin, deleteProduct);
 
 // Export the router for use in the application

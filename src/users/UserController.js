@@ -85,8 +85,32 @@ const UserController = {
 		try {
 			const { userId } = req.params;
 			const updates = req.body;
+			const currentUser = req.user; // The authenticated user making the request
 
-			const updatedUser = await UserService.updateUser(userId, updates, req.user);
+			// Add validation for allowed fields
+			const allowedFields = ['email', 'profile'];
+			// Only admins can update role
+			if (currentUser.role === 'admin') {
+				allowedFields.push('role');
+			}
+
+			const invalidFields = Object.keys(updates).filter(
+				key => !allowedFields.includes(key)
+			);
+
+			if (invalidFields.length > 0) {
+				throw new AppError(
+					`Invalid fields: ${invalidFields.join(', ')}. Allowed fields: ${allowedFields.join(', ')}`,
+					400
+				);
+			}
+
+			// If trying to update role without being admin
+			if (updates.role && currentUser.role !== 'admin') {
+				throw new AppError('Only administrators can update user roles', 403);
+			}
+
+			const updatedUser = await UserService.updateUser(userId, updates, currentUser);
 			if (!updatedUser) {
 				throw new AppError("User not found", 404);
 			}
@@ -130,7 +154,7 @@ const UserController = {
 		}
 	},
 
-	// PUT /users/profile - Update current user profile
+	// PATCH /users/profile - Update current user profile
 	async updateProfile(req, res, next) {
 		try {
 			const userId = req.user._id;
