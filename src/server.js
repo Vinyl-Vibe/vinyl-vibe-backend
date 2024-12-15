@@ -33,13 +33,14 @@ app.set("trust proxy", true);
 
 // Built-in middleware
 app.use(express.json()); // Parse JSON request bodies
+app.use(corsMiddleware); // CORS headers next
 
 /**
- * Session configuration for Passport
- * Why use MongoStore?
+ * Session configuration with MongoStore
+ * Why MongoStore?
  * - Persists sessions across server restarts
  * - Scales across multiple processes
- * - Better for production use than MemoryStore
+ * - Better for production than MemoryStore
  */
 app.use(
     session({
@@ -48,7 +49,7 @@ app.use(
         saveUninitialized: true,
         store: MongoStore.create({
             mongoUrl: process.env.DATABASE_URL,
-            ttl: 24 * 60 * 60, // Session TTL in seconds (1 day)
+            ttl: 24 * 60 * 60, // Session TTL (1 day)
             autoRemove: "native", // Use MongoDB's TTL index
         }),
         cookie: {
@@ -60,11 +61,11 @@ app.use(
     })
 );
 
-// Initialize Passport and restore authentication state from session
+// Initialize Passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Debug middleware for session
+// Debug middleware for session (development only)
 if (process.env.NODE_ENV !== "production") {
     app.use((req, res, next) => {
         console.log("Session:", {
@@ -76,29 +77,9 @@ if (process.env.NODE_ENV !== "production") {
     });
 }
 
-/**
- * Middleware order matters!
- * Why this order?
- * 1. CORS first - Must send CORS headers before any errors
- * 2. Body parsing - Need request body for most routes
- * 3. Routes - Process the actual request
- * 4. Error handling - Must be last to catch all errors
- */
-app.use(express.json()); // Parse JSON bodies first
-app.use(corsMiddleware); // CORS headers next
-
-// Session middleware
-app.use(session({
-    // ... session config
-}));
-
-// Passport middleware
-app.use(passport.initialize());
-app.use(passport.session());
-
-// Routes with their auth middleware
+// Routes
 app.use("/auth", authRoutes);
-app.use("/products", productRoutes); // This uses JWT auth
+app.use("/products", productRoutes);
 app.use("/users", userRoutes);
 app.use("/cart", cartRoutes);
 
