@@ -94,22 +94,27 @@ const UserService = {
 				throw new AppError('You can only update your own profile', 403);
 			}
 
-			// Define which fields can be updated via PATCH
-			const allowedUpdates = [
-				'email',
-				'profile.firstName',
-				'profile.lastName',
-				'profile.phoneNumber',
-				'profile.address.street',
-				'profile.address.city',
-				'profile.address.state',
-				'profile.address.postalCode',
-				'profile.address.country'
-			];
-
-			// Only admins can update role
+			// Define allowed fields based on user role
+			const allowedFields = ['email', 'profile'];
 			if (currentUser.role === 'admin') {
-				allowedUpdates.push('role');
+				allowedFields.push('role');
+			}
+
+			// Validate fields
+			const invalidFields = Object.keys(updates).filter(
+				key => !allowedFields.includes(key)
+			);
+
+			if (invalidFields.length > 0) {
+				throw new AppError(
+					`Invalid fields: ${invalidFields.join(', ')}. Allowed fields: ${allowedFields.join(', ')}`,
+					400
+				);
+			}
+
+			// If trying to update role without being admin
+			if (updates.role && currentUser.role !== 'admin') {
+				throw new AppError('Only administrators can update user roles', 403);
 			}
 
 			// Transform nested updates if profile is included
@@ -134,7 +139,7 @@ const UserService = {
 					});
 				} else {
 					// Handle top-level updates
-					if (allowedUpdates.includes(key)) {
+					if (allowedFields.includes(key)) {
 						acc[key] = updates[key];
 					}
 				}
@@ -143,13 +148,13 @@ const UserService = {
 
 			// Use findByIdAndUpdate with $set for partial updates
 			const updatedUser = await User.findByIdAndUpdate(
-					userId,
-					{ $set: transformedUpdates },
-					{ 
-						new: true,          // Return updated document
-						runValidators: true, // Run schema validators
-						select: '-password -resetPasswordToken -resetPasswordExpires' // Exclude sensitive fields
-					}
+				userId,
+				{ $set: transformedUpdates },
+				{ 
+					new: true,
+					runValidators: true,
+					select: '-password -resetPasswordToken -resetPasswordExpires'
+				}
 			);
 
 			if (!updatedUser) {
