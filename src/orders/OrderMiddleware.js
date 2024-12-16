@@ -9,9 +9,9 @@
 const validateOrderPayload = (request, response, next) => {
     // console.log("Request Body in validateOrderPayload:", request.body);
 
-    const { items, total, status } = request.body;
+    const { products, total, status } = request.body;
 
-    if (!Array.isArray(items) || items.length === 0) {
+    if (!Array.isArray(products) || products.length === 0) {
         return response.status(400).json({
             success: false,
             message: "Order must include at least one item."
