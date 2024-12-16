@@ -7,7 +7,9 @@
 // Validate the payload for creating or updating an order
 // Ensures that all required fields are present and valid
 const validateOrderPayload = (request, response, next) => {
-    const { items, totalPrice, status } = request.body;
+    // console.log("Request Body in validateOrderPayload:", request.body);
+
+    const { items, total, status } = request.body;
 
     if (!Array.isArray(items) || items.length === 0) {
         return response.status(400).json({
@@ -16,7 +18,7 @@ const validateOrderPayload = (request, response, next) => {
         });
     }
 
-    if (typeof totalPrice !== 'number' || totalPrice <= 0) {
+    if (typeof total !== "number" || total <= 0) {
         return response.status(400).json({
             success: false,
             message: "Total price must be a positive number."
