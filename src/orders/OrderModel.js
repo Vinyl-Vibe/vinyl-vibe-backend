@@ -91,11 +91,14 @@ const OrderSchema = new mongoose.Schema(
   {
     // Automatically add `createdAt` and `updatedAt` fields
     timestamps: true,
+    // Disables the __v field
+    versionKey: false, 
   }
 );
 
 // Create the Order model
 const OrderModel = mongoose.model("Order", OrderSchema);
+
 
 // Export the model for use in other parts of the application
 module.exports = {
