@@ -161,7 +161,7 @@ const updateOrder = async (request, response) => {
             });
         }
 
-        const allowedFields = ["status", "items", "totalPrice"]; // Define allowed fields for update
+        const allowedFields = ["status", "products", "total"]; // Define allowed fields for update
         const sanitizedData = Object.keys(updatedData).reduce((acc, key) => {
             // Filter out fields that are not allowed
             if (allowedFields.includes(key)) {

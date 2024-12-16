@@ -6,6 +6,16 @@ meta {
 
 patch {
   url: http://localhost:8080/orders/675fec768ecc8a6be1d76568
-  body: none
+  body: json
   auth: none
+}
+
+headers {
+   Content-Type: application/json
+}
+
+body:json {
+  {
+    "status": "shipped"
+  }
 }

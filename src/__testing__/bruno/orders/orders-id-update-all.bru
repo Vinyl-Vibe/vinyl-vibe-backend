@@ -5,7 +5,34 @@ meta {
 }
 
 put {
-  url: http://localhost:8080/orders/675fec768ecc8a6be1d76568
-  body: none
+  url: http://localhost:8080/orders/67601b96c16126cc493f1c57
+  body: json
   auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "userId": "675ad9b77d85749f98a85689",
+    "products": [
+      {
+        "productId": "675ad9b77d85749f98a85689",
+        "quantity": 2,
+        "unitPrice": 39.99,
+        "productName": "Coughing Up a Storm"
+      }
+    ],
+    "total": 79.98,
+    "status": "pending",
+    "shippingAddress": {
+      "street": "123 Storm street",
+      "suburb": "Melbourne",
+      "postcode": "3000",
+      "state": "Victoria",
+      "country": "Australia"
+    }
+  }
 }
