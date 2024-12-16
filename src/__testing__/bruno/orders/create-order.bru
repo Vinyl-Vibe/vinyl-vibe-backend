@@ -6,6 +6,38 @@ meta {
 
 post {
   url: http://localhost:8080/orders
-  body: none
+  body: json
   auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "userId": "675ae650b8ef937fa70062a0",
+    "products": [
+      {
+        "productId": "675ad9b77d85749f98a85685",
+        "quantity": 2,
+        "unitPrice": 39.99,
+        "productName": "Abbey Road"
+      },
+      {"productId": "675ad9b77d85749f98a85686",
+       "quantity": 2,
+       "unitPrice": 39.99,
+       "productName": "Thriller"
+      }
+    ],
+    "total": 159.96,
+    "status": "pending",
+    "shippingAddress": {
+      "street": "123 Abbey Road",
+      "suburb": "Brisbane",
+      "postcode": "4000",
+      "state": "Queensland",
+      "country": "Australia"
+    }
+  }
 }

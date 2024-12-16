@@ -12,7 +12,8 @@ const {
     createOrder: createOrderService, 
     getOrder: getOrderService, 
     getAllOrders: getAllOrdersService, 
-    updateOrder: updateOrderService, 
+    updateOrder: updateOrderService,
+    partialUpdateOrder: partialUpdateOrderService,
     deleteOrder: deleteOrderService 
 } = require("./OrderService");
 
@@ -145,7 +146,7 @@ const getAllOrders = async (request, response) => {
     }
 };
 
-// Controller for updating an order by ID
+// Controller for updating an entire order by ID
 // Handles the PUT /orders/:order-id endpoint
 const updateOrder = async (request, response) => {
     try {
@@ -187,6 +188,37 @@ const updateOrder = async (request, response) => {
         });
     } catch (error) {
         logError("Error in updateOrder", error); // Log error for debugging
+        response.status(500).json({
+            success: false,
+            message: "Server error, unable to update order",
+        });
+    }
+};
+
+// Controller for partially updating an order by ID
+// Handles the PATCH /orders/:order-id endpoint
+const partialUpdateOrder = async (request, response) => {
+    try {
+        const { orderId } = request.params; // Extract order ID from the URL
+        const updateFields = request.body; // Extract fields to update from the request body
+
+        // Call the service to perform the update
+        const updatedOrder = await partialUpdateOrderService(orderId, updateFields); // Service will handle partial updates
+
+        if (!updatedOrder) {
+            return response.status(404).json({
+                success: false,
+                message: "Order not found",
+            });
+        }
+
+        response.status(200).json({
+            success: true,
+            message: "Order updated successfully",
+            order: updatedOrder,
+        });
+    } catch (error) {
+        console.error("Error in partialUpdateOrder:", error);
         response.status(500).json({
             success: false,
             message: "Server error, unable to update order",
@@ -245,5 +277,6 @@ module.exports = {
     getOrderById,
     getAllOrders,
     updateOrder,
+    partialUpdateOrder,
     deleteOrder,
 };

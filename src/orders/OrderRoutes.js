@@ -16,6 +16,7 @@ const {
     getOrderById,
     getAllOrders,
     updateOrder,
+    partialUpdateOrder,
     deleteOrder
 } = require("./OrderController");
 
@@ -35,6 +36,9 @@ router.get("/:orderId", validateOrderId, getOrderById);
 // Applies `validateOrderId` to validate the ID, `normaliseOrderStatus` to format the status,
 // and `validateOrderPayload` to ensure the data being updated is valid
 router.put("/:orderId", validateOrderId, normaliseOrderStatus, validateOrderPayload, updateOrder);
+
+// PATCH route to partially update an order by ID
+router.patch("/:orderId", validateOrderId, normaliseOrderStatus, partialUpdateOrder);
 
 // DELETE route to cancel an order by ID
 // Applies `validateOrderId` to ensure the order ID is valid

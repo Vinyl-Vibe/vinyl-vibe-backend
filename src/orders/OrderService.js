@@ -32,6 +32,20 @@ const updateOrder = async (orderId, updatedData) => {
     return updatedOrder;
 };
 
+const partialUpdateOrder = async (orderId, updateFields) => {
+    try {
+        // Use Mongoose's `findByIdAndUpdate` for partial updates
+        const updatedOrder = await OrderModel.findByIdAndUpdate(
+            orderId,
+            { $set: updateFields }, // Only update the fields provided
+            { new: true, runValidators: true } // Return the updated document and apply validators
+        );
+        return updatedOrder;
+    } catch (error) {
+        throw error; // Let the controller handle the error
+    }
+};
+
 // Service for deleting (canceling) an order by ID
 const deleteOrder = async (orderId) => {
     const deletedOrder = await OrderModel.findByIdAndDelete(orderId);
@@ -43,5 +57,6 @@ module.exports = {
     getOrder,
     getAllOrders,
     updateOrder,
+    partialUpdateOrder,
     deleteOrder,
 };
