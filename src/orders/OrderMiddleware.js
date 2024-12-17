@@ -4,36 +4,36 @@
  * before they reach the service or controller layer.
  */
 
-// Validate the payload for creating or updating an order
-// Ensures that all required fields are present and valid
-const validateOrderPayload = (request, response, next) => {
-    // console.log("Request Body in validateOrderPayload:", request.body);
+const { AppError } = require("../utils/middleware/errorMiddleware");
+const { OrderModel } = require("./OrderModel");
+const { VALID_ORDER_STATUSES } = require("./OrderService");
 
+// Validate the payload for creating or updating an order
+const validateOrderPayload = (request, response, next) => {
     const { products, total, status } = request.body;
 
     if (!Array.isArray(products) || products.length === 0) {
         return response.status(400).json({
             success: false,
-            message: "Order must include at least one item."
+            message: "Order must include at least one item.",
         });
     }
 
     if (typeof total !== "number" || total <= 0) {
         return response.status(400).json({
             success: false,
-            message: "Total price must be a positive number."
+            message: "Total price must be a positive number.",
         });
     }
 
-    const validStatuses = ["pending", "completed", "canceled", "shipped"];
-    if (!validStatuses.includes(status)) {
+    if (!VALID_ORDER_STATUSES.includes(status?.toLowerCase())) {
         return response.status(400).json({
             success: false,
-            message: `Invalid status. Valid statuses are: ${validStatuses.join(", ")}`
+            message: `Invalid status. Valid statuses are: ${VALID_ORDER_STATUSES.join(", ")}`,
         });
     }
 
-    next(); // Proceed to the next middleware or controller
+    next();
 };
 
 // Middleware to validate the order ID in the request params
@@ -47,7 +47,7 @@ const validateOrderId = (request, response, next) => {
     if (!orderId || !/^[a-fA-F0-9]{24}$/.test(orderId)) {
         return response.status(400).json({
             success: false,
-            message: "Invalid order ID format."
+            message: "Invalid order ID format.",
         });
     }
 
@@ -64,9 +64,31 @@ const normaliseOrderStatus = (request, response, next) => {
     next(); // Proceed to the next middleware or controller
 };
 
+const verifyOrderOwnership = async (req, res, next) => {
+    try {
+        const order = await OrderModel.findById(req.params.orderId);
+        if (!order) {
+            throw new AppError("Order not found", 404);
+        }
+
+        if (
+            order.userId.toString() !== req.user._id.toString() &&
+            req.user.role !== "admin"
+        ) {
+            throw new AppError("Not authorized to access this order", 403);
+        }
+
+        req.order = order; // Attach order to request for later use
+        next();
+    } catch (error) {
+        next(error);
+    }
+};
+
 // Export middleware functions for use in routes
 module.exports = {
     validateOrderPayload,
     validateOrderId,
-    normaliseOrderStatus
+    normaliseOrderStatus,
+    verifyOrderOwnership,
 };

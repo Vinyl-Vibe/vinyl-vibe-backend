@@ -1,5 +1,5 @@
 meta {
-  name: orders-get-all
+  name: Get all orders [ADMIN or SELF]
   type: http
   seq: 1
 }
@@ -7,5 +7,5 @@ meta {
 get {
   url: http://localhost:8080/orders
   body: none
-  auth: none
+  auth: inherit
 }

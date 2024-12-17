@@ -1,5 +1,5 @@
 meta {
-  name: orders-cancel
+  name: Delete order by ID [ADMIN]
   type: http
   seq: 6
 }
@@ -7,5 +7,5 @@ meta {
 delete {
   url: http://localhost:8080/orders/6760213bbc98c02c9f752334
   body: none
-  auth: none
+  auth: inherit
 }

@@ -17,6 +17,9 @@ const {
     deleteOrder: deleteOrderService 
 } = require("./OrderService");
 
+const { AppError } = require("../utils/middleware/errorMiddleware");
+const mongoose = require('mongoose');
+
 // Utility for structured error logging
 // This function logs errors in a consistent format to assist with debugging
 const logError = (message, error) => {
@@ -25,61 +28,58 @@ const logError = (message, error) => {
 
 // Controller for creating a new order
 // Handles the POST /orders endpoint
-const createOrder = async (request, response) => {
+const createOrder = async (request, response, next) => {
     try {
-        const orderData = request.body; // Extract order details from the request body
-        const newOrder = await createOrderService(orderData); // Pass order details to the service to create the order
+        const orderData = request.body;
+        
+        // Set userId based on current user unless admin specifying another user
+        if (request.user.role === 'admin' && orderData.userId) {
+            // Admin can create order for other users
+            if (!mongoose.Types.ObjectId.isValid(orderData.userId)) {
+                throw new AppError("Invalid userId format", 400);
+            }
+        } else {
+            // Non-admins or admins not specifying userId use their own ID
+            orderData.userId = request.user._id;
+        }
 
-        // Respond with the created order and success message
+        const newOrder = await createOrderService(orderData);
+
         response.status(201).json({
             success: true,
             message: "Order created successfully",
             order: newOrder,
         });
     } catch (error) {
-        logError("Error in createOrder", error); // Log error for debugging
-        response.status(500).json({
-            success: false,
-            message: "Server error, unable to create order",
-        });
+        next(error);
     }
 };
 
 // Controller for getting a specific order by ID
 // Handles the GET /orders/:order-id endpoint
-const getOrderById = async (request, response) => {
+const getOrderById = async (request, response, next) => {
     try {
-        const { orderId } = request.params; // Extract the order ID from URL parameters
-
-        // Validate that the order ID is provided
-        if (!orderId) {
-            return response.status(400).json({
-                success: false,
-                message: "Order ID is required",
-            });
-        }
-
-        const order = await getOrderService(orderId); // Fetch the order details from the service
-
-        // If the order is not found, respond with a 404 error
+        const { orderId } = request.params;
+        
+        const order = await getOrderService(orderId);
+        
         if (!order) {
-            return response.status(404).json({
-                success: false,
-                message: "Order not found",
-            });
+            throw new AppError("Order not found", 404);
         }
 
-        // Respond with the order details
+        // Check if user is authorized to view this order
+        // Allow if admin or if it's the user's own order
+        if (request.user.role !== 'admin' && 
+            order.userId.toString() !== request.user._id.toString()) {
+            throw new AppError("Not authorized to view this order", 403);
+        }
+
         response.status(200).json({
             success: true,
             order,
         });
     } catch (error) {
-        logError("Error in getOrderById", error); // Log error for debugging
-        response.status(500).json({
-            success: false,
-            message: "Server error, unable to fetch order",
-        });
+        next(error);
     }
 };
 
@@ -104,135 +104,65 @@ const parseDateFilters = (startDate, endDate) => {
 
 // Controller for getting all orders with optional filtering
 // Handles the GET /orders endpoint with query parameters for filtering
-const getAllOrders = async (request, response) => {
+const getAllOrders = async (request, response, next) => {
     try {
-        const { status, userId, startDate, endDate } = request.query; // Extract query parameters
-
-        // Filters object to be passed to the service layer
+        const { status, userId, startDate, endDate } = request.query;
         const filters = {};
 
-        // Check if userId is provided and convert it to ObjectId if necessary
-        if (userId) {
-            // If userId is valid, use ObjectId format
-            if (mongoose.Types.ObjectId.isValid(userId)) {
-                filters.userId = mongoose.Types.ObjectId(userId); // Convert userId to ObjectId for comparison
-            } else {
-                return response.status(400).json({
-                    success: false,
-                    message: "Invalid userId format",
-                });
+        // If not admin, only show user's own orders
+        if (request.user.role !== 'admin') {
+            filters.userId = request.user._id;
+        } else if (userId) {
+            // Admin can filter by specific userId if provided
+            if (!mongoose.Types.ObjectId.isValid(userId)) {
+                throw new AppError("Invalid userId format", 400);
             }
+            filters.userId = mongoose.Types.ObjectId(userId);
         }
 
-        // Apply status filter if provided in query
+        // Apply status filter if provided
         if (status) {
-            const validStatuses = ["pending", "completed", "canceled", "shipped"]; // Define valid statuses
-            if (!validStatuses.includes(status)) {
-                return response.status(400).json({
-                    success: false,
-                    message: `Invalid status value. Valid values are: ${validStatuses.join(", ")}`,
-                });
+            if (!VALID_ORDER_STATUSES.includes(status)) {
+                throw new AppError(`Invalid status. Valid values are: ${VALID_ORDER_STATUSES.join(", ")}`, 400);
             }
-            filters.status = status; // Add status filter if valid
+            filters.status = status;
         }
 
-        // Apply date filters if provided in query
-        // This function will ensure that only orders within the date range are included
-        Object.assign(filters, parseDateFilters(startDate, endDate)); // Add date filters if provided
+        // Apply date filters if provided
+        Object.assign(filters, parseDateFilters(startDate, endDate));
 
-        console.log("Filters being used:", filters);  // Debug log to ensure filters are applied
+        console.log("Filters being used:", filters);
 
-        // Fetch filtered orders from the service
-        const orders = await getAllOrdersService(filters); // Pass the filters object to the service to fetch the filtered orders
+        const orders = await getAllOrdersService(filters);
 
-        // Respond with the filtered list of orders
         response.status(200).json({
             success: true,
             orders,
         });
     } catch (error) {
-        // Handle the case where date format is invalid
-        if (error.message.includes("Invalid date format")) {
-            return response.status(400).json({
-                success: false,
-                message: error.message,
-            });
-        }
-
-        // Log any other errors and send a server error response
-        logError("Error in getAllOrders", error); // Log error for debugging
-        response.status(500).json({
-            success: false,
-            message: "Server error, unable to fetch orders",
-        });
+        next(error);
     }
 };
 
-// Controller for updating an entire order by ID
-// Handles the PUT /orders/:order-id endpoint
-const updateOrder = async (request, response) => {
+// Combined controller for full or partial order updates
+const updateOrder = async (request, response, next) => {
     try {
-        const { orderId } = request.params; // Extract the order ID from URL parameters
-        const updatedData = request.body; // Extract updated order details from the request body
+        const { orderId } = request.params;
+        const updateData = request.body;
 
-        // Validate that the order ID is provided
-        if (!orderId) {
-            return response.status(400).json({
-                success: false,
-                message: "Order ID is required",
-            });
+        // First check if order exists
+        const existingOrder = await getOrderService(orderId);
+        if (!existingOrder) {
+            throw new AppError("Order not found", 404);
         }
 
-        const allowedFields = ["status", "products", "total"]; // Define allowed fields for update
-        const sanitizedData = Object.keys(updatedData).reduce((acc, key) => {
-            // Filter out fields that are not allowed
-            if (allowedFields.includes(key)) {
-                acc[key] = updatedData[key];
-            }
-            return acc;
-        }, {});
-
-        const updatedOrder = await updateOrderService(orderId, sanitizedData); // Update the order using the service
-
-        // If the order is not found, respond with a 404 error
-        if (!updatedOrder) {
-            return response.status(404).json({
-                success: false,
-                message: "Order not found",
-            });
+        // Check authorization - admin can update any order, users can only update their own
+        if (request.user.role !== 'admin' && 
+            existingOrder.userId.toString() !== request.user._id.toString()) {
+            throw new AppError("Not authorized to update this order", 403);
         }
 
-        // Respond with the updated order details
-        response.status(200).json({
-            success: true,
-            message: "Order updated successfully",
-            order: updatedOrder,
-        });
-    } catch (error) {
-        logError("Error in updateOrder", error); // Log error for debugging
-        response.status(500).json({
-            success: false,
-            message: "Server error, unable to update order",
-        });
-    }
-};
-
-// Controller for partially updating an order by ID
-// Handles the PATCH /orders/:order-id endpoint
-const partialUpdateOrder = async (request, response) => {
-    try {
-        const { orderId } = request.params; // Extract order ID from the URL
-        const updateFields = request.body; // Extract fields to update from the request body
-
-        // Call the service to perform the update
-        const updatedOrder = await partialUpdateOrderService(orderId, updateFields); // Service will handle partial updates
-
-        if (!updatedOrder) {
-            return response.status(404).json({
-                success: false,
-                message: "Order not found",
-            });
-        }
+        const updatedOrder = await updateOrderService(orderId, updateData);
 
         response.status(200).json({
             success: true,
@@ -240,56 +170,48 @@ const partialUpdateOrder = async (request, response) => {
             order: updatedOrder,
         });
     } catch (error) {
-        console.error("Error in partialUpdateOrder:", error);
-        response.status(500).json({
-            success: false,
-            message: "Server error, unable to update order",
-        });
+        next(error);
     }
 };
 
-// Controller for deleting an order (canceling) by ID
-// Handles the DELETE /orders/:order-id endpoint
-const deleteOrder = async (request, response) => {
+// Controller for deleting an order (admin only)
+const deleteOrder = async (request, response, next) => {
     try {
-        const { orderId } = request.params; // Extract the order ID from URL parameters
+        const { orderId } = request.params;
 
-        // Validate that the order ID is provided
-        if (!orderId) {
-            return response.status(400).json({
-                success: false,
-                message: "Order ID is required",
-            });
-        }
+        const deletedOrder = await deleteOrderService(orderId);
 
-        const deletedOrder = await deleteOrderService(orderId); // Attempt to delete the order using the service
-
-        // If the order is not found, respond with a 404 error
         if (!deletedOrder) {
-            return response.status(404).json({
-                success: false,
-                message: "Order not found",
-            });
+            throw new AppError("Order not found", 404);
         }
 
-        // Respond with a success message upon successful deletion
         response.status(200).json({
             success: true,
             message: "Order deleted successfully",
         });
     } catch (error) {
-        if (error.message.includes("foreign key constraint")) {
-            // Respond with a 400 error if there are associated dependencies preventing deletion
-            return response.status(400).json({
-                success: false,
-                message: "Cannot delete order due to associated dependencies.",
-            });
-        }
-        logError("Error in deleteOrder", error); // Log error for debugging
-        response.status(500).json({
-            success: false,
-            message: "Server error, unable to delete order",
+        next(error);
+    }
+};
+
+// Controller for getting orders for the currently authenticated user
+const getMyOrders = async (request, response, next) => {
+    try {
+        // Get the user ID from the authenticated user
+        const userId = request.user._id;
+
+        // Create filters for the current user
+        const filters = { userId: mongoose.Types.ObjectId(userId) };
+
+        // Get orders using the existing service
+        const orders = await getAllOrdersService(filters);
+
+        response.status(200).json({
+            success: true,
+            orders,
         });
+    } catch (error) {
+        next(error);
     }
 };
 
@@ -299,6 +221,6 @@ module.exports = {
     getOrderById,
     getAllOrders,
     updateOrder,
-    partialUpdateOrder,
     deleteOrder,
+    getMyOrders
 };

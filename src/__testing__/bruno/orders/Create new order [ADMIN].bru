@@ -1,17 +1,13 @@
 meta {
-  name: orders-id-update-all
+  name: Create new order [ADMIN]
   type: http
-  seq: 4
+  seq: 2
 }
 
-put {
-  url: http://localhost:8080/orders/67601b96c16126cc493f1c57
+post {
+  url: http://localhost:8080/orders
   body: json
-  auth: none
-}
-
-headers {
-  Content-Type: application/json
+  auth: inherit
 }
 
 body:json {
@@ -20,12 +16,12 @@ body:json {
     "products": [
       {
         "productId": "675ad9b77d85749f98a85689",
-        "quantity": 2,
+        "quantity": 1,
         "unitPrice": 39.99,
         "productName": "Coughing Up a Storm"
       }
     ],
-    "total": 79.98,
+    "total": 39.99,
     "status": "pending",
     "shippingAddress": {
       "street": "123 Storm street",

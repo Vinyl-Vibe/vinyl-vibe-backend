@@ -7,7 +7,8 @@ const router = express.Router();
 const {
     validateOrderPayload,
     validateOrderId,
-    normaliseOrderStatus
+    normaliseOrderStatus,
+    verifyOrderOwnership
 } = require("./OrderMiddleware");
 
 // Import controller functions
@@ -16,33 +17,47 @@ const {
     getOrderById,
     getAllOrders,
     updateOrder,
-    partialUpdateOrder,
-    deleteOrder
+    deleteOrder,
+    getMyOrders
 } = require("./OrderController");
+
+// Import authentication middleware
+const { validateUserAuth } = require("../auth/AuthMiddleware");
+
+// Import role-based access control middleware
+const { requireRole } = require("../utils/middleware/roleMiddleware");
+
+// Apply authentication middleware to all order routes
+router.use(validateUserAuth);
+
+// Regular users can only access their own orders
+// This route must come BEFORE the /:orderId route
+router.get("/my-orders", getMyOrders);
+
+// GET route to fetch all orders (admin only)
+router.get("/", getAllOrders);
+
+// GET route to fetch a specific order by ID
+// Applies `validateOrderId` to ensure the order ID in the params is valid
+router.get("/:orderId", 
+    validateOrderId, 
+    getOrderById
+);
 
 // POST route to create a new order
 // Applies `normaliseOrderStatus` to format the status and `validateOrderPayload` to ensure valid data
 router.post("/", normaliseOrderStatus, validateOrderPayload, createOrder);
 
-// GET route to fetch all orders (with optional query params for filtering)
-// No middleware is needed here as this endpoint fetches orders without requiring payload validation
-router.get("/", getAllOrders);
+// PATCH route to update an order (full or partial)
+router.patch("/:orderId", 
+    validateOrderId, 
+    normaliseOrderStatus, 
+    validateOrderPayload, 
+    updateOrder
+);
 
-// GET route to fetch a specific order by ID
-// Applies `validateOrderId` to ensure the order ID in the params is valid
-router.get("/:orderId", validateOrderId, getOrderById);
-
-// PUT route to update an existing order by ID
-// Applies `validateOrderId` to validate the ID, `normaliseOrderStatus` to format the status,
-// and `validateOrderPayload` to ensure the data being updated is valid
-router.put("/:orderId", validateOrderId, normaliseOrderStatus, validateOrderPayload, updateOrder);
-
-// PATCH route to partially update an order by ID
-router.patch("/:orderId", validateOrderId, normaliseOrderStatus, partialUpdateOrder);
-
-// DELETE route to cancel an order by ID
-// Applies `validateOrderId` to ensure the order ID is valid
-router.delete("/:orderId", validateOrderId, deleteOrder);
+// DELETE route to cancel an order (admin only)
+router.delete("/:orderId", requireRole('admin'), validateOrderId, deleteOrder);
 
 module.exports = router;
 

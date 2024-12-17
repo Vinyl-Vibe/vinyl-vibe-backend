@@ -1,5 +1,5 @@
 meta {
-  name: orders-id-update
+  name: Update order by ID [ADMIN or SELF]
   type: http
   seq: 5
 }
@@ -7,11 +7,7 @@ meta {
 patch {
   url: http://localhost:8080/orders/675fec768ecc8a6be1d76568
   body: json
-  auth: none
-}
-
-headers {
-   Content-Type: application/json
+  auth: inherit
 }
 
 body:json {
