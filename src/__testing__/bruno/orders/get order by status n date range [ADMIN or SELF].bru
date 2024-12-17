@@ -1,0 +1,17 @@
+meta {
+  name: get order by status n date range [ADMIN or SELF]
+  type: http
+  seq: 8
+}
+
+get {
+  url: http://localhost:8080/orders?status=pending&start-date=2024-01-01&end-date=2024-01-31
+  body: none
+  auth: inherit
+}
+
+params:query {
+  status: pending
+  start-date: 2024-01-01
+  end-date: 2024-01-31
+}

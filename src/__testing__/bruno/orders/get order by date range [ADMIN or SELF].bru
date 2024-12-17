@@ -1,0 +1,16 @@
+meta {
+  name: get order by date range [ADMIN or SELF]
+  type: http
+  seq: 7
+}
+
+get {
+  url: http://localhost:8080/orders?start-date=2024-01-01&end-date=2024-12-31
+  body: none
+  auth: inherit
+}
+
+params:query {
+  start-date: 2024-01-01
+  end-date: 2024-12-31
+}

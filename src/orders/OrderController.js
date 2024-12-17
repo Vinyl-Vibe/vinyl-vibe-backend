@@ -17,6 +17,7 @@ const {
     deleteOrder: deleteOrderService 
 } = require("./OrderService");
 
+const { VALID_ORDER_STATUSES } = require("./OrderService");
 const { AppError } = require("../utils/middleware/errorMiddleware");
 const mongoose = require('mongoose');
 
