@@ -110,6 +110,21 @@ const getAllOrders = async (request, response) => {
 
         // Filters object to be passed to the service layer
         const filters = {};
+
+        // Check if userId is provided and convert it to ObjectId if necessary
+        if (userId) {
+            // If userId is valid, use ObjectId format
+            if (mongoose.Types.ObjectId.isValid(userId)) {
+                filters.userId = mongoose.Types.ObjectId(userId); // Convert userId to ObjectId for comparison
+            } else {
+                return response.status(400).json({
+                    success: false,
+                    message: "Invalid userId format",
+                });
+            }
+        }
+
+        // Apply status filter if provided in query
         if (status) {
             const validStatuses = ["pending", "completed", "canceled", "shipped"]; // Define valid statuses
             if (!validStatuses.includes(status)) {
@@ -120,10 +135,15 @@ const getAllOrders = async (request, response) => {
             }
             filters.status = status; // Add status filter if valid
         }
-        if (userId) filters.userId = userId; // Add user ID filter if provided
-        Object.assign(filters, parseDateFilters(startDate, endDate)); // Add date filters
 
-        const orders = await getAllOrdersService(filters); // Fetch filtered orders from the service
+        // Apply date filters if provided in query
+        // This function will ensure that only orders within the date range are included
+        Object.assign(filters, parseDateFilters(startDate, endDate)); // Add date filters if provided
+
+        console.log("Filters being used:", filters);  // Debug log to ensure filters are applied
+
+        // Fetch filtered orders from the service
+        const orders = await getAllOrdersService(filters); // Pass the filters object to the service to fetch the filtered orders
 
         // Respond with the filtered list of orders
         response.status(200).json({
@@ -131,13 +151,15 @@ const getAllOrders = async (request, response) => {
             orders,
         });
     } catch (error) {
+        // Handle the case where date format is invalid
         if (error.message.includes("Invalid date format")) {
-            // Respond with a 400 error if date validation fails
             return response.status(400).json({
                 success: false,
                 message: error.message,
             });
         }
+
+        // Log any other errors and send a server error response
         logError("Error in getAllOrders", error); // Log error for debugging
         response.status(500).json({
             success: false,
