@@ -59,27 +59,31 @@ const createOrder = async (request, response, next) => {
 // Handles the GET /orders/:order-id endpoint
 const getOrderById = async (request, response, next) => {
     try {
-        const { orderId } = request.params;
-        
+        const { orderId } = request.params; // Get order ID from the URL params
+
+        // Fetch the order from the database
         const order = await getOrderService(orderId);
-        
+
+        // If the order doesn't exist, throw an error
         if (!order) {
             throw new AppError("Order not found", 404);
         }
 
-        // Check if user is authorized to view this order
-        // Allow if admin or if it's the user's own order
+        // Check if the logged-in user is authorized to view the order
+        // Only allow if admin or if it's the user's own order
+        // Ensure `request.user._id` matches the `userId` of the order (also ensure they are ObjectId types)
         if (request.user.role !== 'admin' && 
             order.userId.toString() !== request.user._id.toString()) {
             throw new AppError("Not authorized to view this order", 403);
         }
 
+        // If authorized, return the order details
         response.status(200).json({
             success: true,
             order,
         });
     } catch (error) {
-        next(error);
+        next(error); // Pass any error to the error handling middleware
     }
 };
 
