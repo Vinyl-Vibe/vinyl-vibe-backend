@@ -19,6 +19,11 @@ const getOrder = async (orderId) => {
 // Service for getting all orders with optional filters
 const getAllOrders = async (filters) => {
     console.log("Filters being used:", filters);  // Debug log to ensure filters are applied correctly
+
+    if (!filters || Object.keys(filters).length === 0) {
+        throw new Error("No filters applied to the query");  // Throw error if filters are empty
+    }
+
     try {
         // Use the filters object to query the database
         const orders = await OrderModel.find(filters)  // Apply the filters to the database query
@@ -27,6 +32,7 @@ const getAllOrders = async (filters) => {
         
         return orders;  // Return the orders based on the filters
     } catch (error) {
+        console.log("Error fetching orders in the service:", error);  // Log the error if fetching fails
         throw new Error("Unable to fetch orders");
     }
 };
