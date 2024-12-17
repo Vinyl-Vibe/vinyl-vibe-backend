@@ -12,21 +12,24 @@ const { VALID_ORDER_STATUSES } = require("./OrderService");
 const validateOrderPayload = (request, response, next) => {
     const { products, total, status } = request.body;
 
-    if (!Array.isArray(products) || products.length === 0) {
+    // If the request includes products, validate it
+    if (products && (!Array.isArray(products) || products.length === 0)) {
         return response.status(400).json({
             success: false,
             message: "Order must include at least one item.",
         });
     }
 
-    if (typeof total !== "number" || total <= 0) {
+    // If the request includes total, validate it
+    if (total && (typeof total !== "number" || total <= 0)) {
         return response.status(400).json({
             success: false,
             message: "Total price must be a positive number.",
         });
     }
 
-    if (!VALID_ORDER_STATUSES.includes(status?.toLowerCase())) {
+    // Validate the status if it is provided
+    if (status && !VALID_ORDER_STATUSES.includes(status?.toLowerCase())) {
         return response.status(400).json({
             success: false,
             message: `Invalid status. Valid statuses are: ${VALID_ORDER_STATUSES.join(", ")}`,
