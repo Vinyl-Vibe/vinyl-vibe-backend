@@ -88,10 +88,10 @@ const UserSchema = new mongoose.Schema(
 					email: ret.email,
 					role: ret.role,
 					profile: ret.profile,
-					socialLogins: ret.socialLogins.map(login => ({
+					socialLogins: ret.socialLogins?.map(login => ({
 						provider: login.provider,
 						email: login.email
-					})),
+					}) || []) || [], // Use optional chaining and provide default empty array
 					createdAt: ret.createdAt,
 					updatedAt: ret.updatedAt
 				};
@@ -112,10 +112,10 @@ const UserSchema = new mongoose.Schema(
 					email: ret.email,
 					role: ret.role,
 					profile: ret.profile,
-					socialLogins: ret.socialLogins.map(login => ({
+					socialLogins: ret.socialLogins?.map(login => ({
 						provider: login.provider,
 						email: login.email
-					})),
+					}) || []) || [], // Use optional chaining and provide default empty array
 					createdAt: ret.createdAt,
 					updatedAt: ret.updatedAt
 				};

@@ -1,12 +1,13 @@
 const { OrderModel } = require("./OrderModel");
 const { AppError } = require("../utils/middleware/errorMiddleware");
+const { ProductModel } = require("../products/ProductModel");
 
 // Constants for order validation
 const VALID_ORDER_STATUSES = ['pending', 'completed', 'canceled', 'shipped', 'delivered', 'returned'];
 
 // Validation helpers
 const validateOrderData = (orderData) => {
-    const { products, total, status, shippingAddress } = orderData;
+    const { products } = orderData;
 
     // Validate products array
     if (!Array.isArray(products) || products.length === 0) {
@@ -19,32 +20,56 @@ const validateOrderData = (orderData) => {
             throw new AppError('Each product must have a valid productId and quantity', 400);
         }
     });
+};
 
-    // Validate total
-    if (typeof total !== 'number' || total <= 0) {
-        throw new AppError('Total must be a positive number', 400);
-    }
-
-    // Validate status
-    if (!VALID_ORDER_STATUSES.includes(status?.toLowerCase())) {
-        throw new AppError(`Invalid status. Valid statuses are: ${VALID_ORDER_STATUSES.join(', ')}`, 400);
-    }
-
-    // Validate shipping address
-    const requiredAddressFields = ['street', 'suburb', 'postcode', 'state', 'country'];
-    if (!shippingAddress || !requiredAddressFields.every(field => shippingAddress[field])) {
-        throw new AppError('Shipping address must include street, suburb, postcode, state, and country', 400);
-    }
+// Helper function to handle floating point calculations
+const calculatePrice = (price, quantity) => {
+    // Convert to cents, multiply, then convert back to dollars
+    return Math.round(price * 100 * quantity) / 100;
 };
 
 // Service for creating a new order
 const createOrder = async (orderData) => {
-    // Validate order data before creating
+    console.log('OrderData received:', orderData);
+    
     validateOrderData(orderData);
     
-    const newOrder = new OrderModel(orderData);
+    // Populate product details to calculate total
+    const populatedProducts = await Promise.all(orderData.products.map(async (item) => {
+        const product = await ProductModel.findById(item.productId);
+        if (!product) {
+            throw new AppError(`Product not found: ${item.productId}`, 404);
+        }
+        console.log('Found product:', product);
+        return {
+            productId: product._id,
+            quantity: item.quantity,
+            price: product.price
+        };
+    }));
+
+    // Calculate total with proper floating point handling
+    const total = populatedProducts.reduce((sum, item) => {
+        return calculatePrice(sum + calculatePrice(item.price, item.quantity), 1);
+    }, 0);
+
+    // Create order with calculated total
+    const newOrder = new OrderModel({
+        ...orderData,
+        products: populatedProducts,
+        total
+    });
+    
     await newOrder.save();
-    return newOrder;
+    
+    // Populate and log the result
+    const populatedOrder = await OrderModel.findById(newOrder._id)
+        .populate('userId', 'email profile')
+        .populate('products.productId', 'name description price images thumbnail');
+    
+    console.log('Populated order:', populatedOrder);
+    
+    return populatedOrder;
 };
 
 // Service for getting a specific order by ID

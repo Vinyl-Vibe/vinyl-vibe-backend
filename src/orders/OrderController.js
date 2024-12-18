@@ -8,22 +8,22 @@
  * - Updating an order
  * - Deleting an order
  */
-const { 
-    createOrder: createOrderService, 
-    getOrder: getOrderService, 
-    getAllOrders: getAllOrdersService, 
+const {
+    createOrder: createOrderService,
+    getOrder: getOrderService,
+    getAllOrders: getAllOrdersService,
     updateOrder: updateOrderService,
     partialUpdateOrder: partialUpdateOrderService,
-    deleteOrder: deleteOrderService 
+    deleteOrder: deleteOrderService,
 } = require("./OrderService");
 
 const { VALID_ORDER_STATUSES } = require("./OrderService");
 const { AppError } = require("../utils/middleware/errorMiddleware");
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 // Importing the Stripe instance
-const { createCheckoutSession } = require('../utils/stripe');
-const EmailService = require('../utils/emailService');
+const { createCheckoutSession } = require("../utils/stripe");
+const EmailService = require("../utils/emailService");
 
 // Utility for structured error logging
 // This function logs errors in a consistent format to assist with debugging
@@ -36,9 +36,9 @@ const logError = (message, error) => {
 const createOrder = async (request, response, next) => {
     try {
         const orderData = request.body;
-        
+
         // Set userId based on current user unless admin specifying another user
-        if (request.user.role === 'admin' && orderData.userId) {
+        if (request.user.role === "admin" && orderData.userId) {
             // Admin can create order for other users
             if (!mongoose.Types.ObjectId.isValid(orderData.userId)) {
                 throw new AppError("Invalid userId format", 400);
@@ -49,7 +49,7 @@ const createOrder = async (request, response, next) => {
         }
 
         // Create order in pending state
-        orderData.status = 'pending';
+        orderData.status = "pending";
         const newOrder = await createOrderService(orderData);
 
         // Create Stripe Checkout session
@@ -62,7 +62,7 @@ const createOrder = async (request, response, next) => {
             success: true,
             message: "Order created successfully",
             order: newOrder,
-            checkoutUrl: session.url
+            checkoutUrl: session.url,
         });
     } catch (error) {
         next(error);
@@ -86,8 +86,10 @@ const getOrderById = async (request, response, next) => {
         // Check if the logged-in user is authorized to view the order
         // Only allow if admin or if it's the user's own order
         // Ensure `request.user._id` matches the `userId` of the order (also ensure they are ObjectId types)
-        if (request.user.role !== 'admin' && 
-            order.userId.toString() !== request.user._id.toString()) {
+        if (
+            request.user.role !== "admin" &&
+            order.userId.toString() !== request.user._id.toString()
+        ) {
             throw new AppError("Not authorised to view this order", 403);
         }
 
@@ -114,7 +116,7 @@ const parseDateFilters = (startDate, endDate) => {
         }
         filters.createdAt = {
             $gte: start, // Start date filter (greater than or equal to)
-            $lte: end,   // End date filter (less than or equal to)
+            $lte: end, // End date filter (less than or equal to)
         };
     }
     return filters; // Return the filters object
@@ -128,7 +130,7 @@ const getAllOrders = async (request, response, next) => {
         const filters = {};
 
         // If not admin, only show user's own orders
-        if (request.user.role !== 'admin') {
+        if (request.user.role !== "admin") {
             filters.userId = request.user._id;
         } else if (userId) {
             // Admin can filter by specific userId if provided
@@ -141,7 +143,12 @@ const getAllOrders = async (request, response, next) => {
         // Apply status filter if provided
         if (status) {
             if (!VALID_ORDER_STATUSES.includes(status)) {
-                throw new AppError(`Invalid status. Valid values are: ${VALID_ORDER_STATUSES.join(", ")}`, 400);
+                throw new AppError(
+                    `Invalid status. Valid values are: ${VALID_ORDER_STATUSES.join(
+                        ", "
+                    )}`,
+                    400
+                );
             }
             filters.status = status;
         }
@@ -175,8 +182,10 @@ const updateOrder = async (request, response, next) => {
         }
 
         // Check authorization - admin can update any order, users can only update their own
-        if (request.user.role !== 'admin' && 
-            existingOrder.userId.toString() !== request.user._id.toString()) {
+        if (
+            request.user.role !== "admin" &&
+            existingOrder.userId.toString() !== request.user._id.toString()
+        ) {
             throw new AppError("Not authorized to update this order", 403);
         }
 
@@ -240,5 +249,5 @@ module.exports = {
     getAllOrders,
     updateOrder,
     deleteOrder,
-    getMyOrders
+    getMyOrders,
 };

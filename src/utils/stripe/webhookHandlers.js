@@ -1,4 +1,5 @@
 const { OrderModel } = require('../../orders/OrderModel');
+const { User } = require('../../users/UserModel');
 const EmailService = require('../emailService');
 const { AppError } = require('../middleware/errorMiddleware');
 
@@ -11,10 +12,30 @@ const { AppError } = require('../middleware/errorMiddleware');
 const handleCheckoutComplete = async (session) => {
     try {
         const orderId = session.metadata.orderId;
+        const userId = session.metadata.userId;
         
-        // Update order status to completed
-        await OrderModel.findByIdAndUpdate(orderId, { status: 'completed' });
-        
+        // Get shipping address from Stripe
+        const shippingAddress = session.shipping?.address ? {
+            street: session.shipping.address.line1,
+            suburb: session.shipping.address.city,
+            postcode: session.shipping.address.postal_code,
+            state: session.shipping.address.state,
+            country: session.shipping.address.country,
+        } : null;
+
+        // Update order status and add shipping address
+        await OrderModel.findByIdAndUpdate(orderId, { 
+            status: 'completed',
+            shippingAddress, // Add shipping address to order
+        });
+
+        // If we got a shipping address, update user's profile
+        if (shippingAddress) {
+            await User.findByIdAndUpdate(userId, {
+                'profile.address': shippingAddress
+            });
+        }
+
         // Get order details and send confirmation
         const order = await OrderModel.findById(orderId)
             .populate('userId', 'email');
