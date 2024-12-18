@@ -21,6 +21,8 @@ const { VALID_ORDER_STATUSES } = require("./OrderService");
 const { AppError } = require("../utils/middleware/errorMiddleware");
 const mongoose = require('mongoose');
 
+const { sendOrderConfirmation } = require("../utils/emailService");
+
 // Importing the Stripe instance
 const stripe = require('../utils/stripe');
 
@@ -64,6 +66,11 @@ const createOrder = async (request, response, next) => {
             order: newOrder,
             clientSecret: paymentIntent.client_secret, // Stripe client secret to confirm the payment
         });
+
+        // Send order confirmation email after payment is successfully processed
+        // Assuming `userEmail` and `orderDetails` are available
+        await sendOrderConfirmation(request.user.email, newOrder);
+
     } catch (error) {
         next(error);
     }
