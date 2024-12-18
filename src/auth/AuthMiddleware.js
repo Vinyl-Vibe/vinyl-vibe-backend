@@ -10,8 +10,8 @@
 
 const { AppError } = require("../utils/middleware/errorMiddleware");
 const jwt = require("jsonwebtoken");
-const crypto = require('crypto');
-const { User } = require('../users/UserModel');
+const crypto = require("crypto");
+const { User } = require("../users/UserModel");
 
 // Get secret key from environment
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -26,7 +26,7 @@ if (!JWT_SECRET) {
  * - Role-based access control
  * - Avoid database lookups for basic permissions
  * - Stateless authorization checks
- * 
+ *
  * Why use _id instead of userId?
  * - Consistent with MongoDB's _id field
  * - Used throughout the application
@@ -39,7 +39,7 @@ function generateJWT(userId, email, role) {
             userId: userId,
             email,
             role,
-            isAdmin: role === 'admin'
+            isAdmin: role === "admin",
         },
         JWT_SECRET,
         { expiresIn: "7d" }
@@ -52,18 +52,27 @@ function generateJWT(userId, email, role) {
 async function validateUserAuth(request, response, next) {
     try {
         const authHeader = request.headers.authorization;
+        console.log("Auth header:", authHeader);
 
         if (!authHeader?.startsWith("Bearer ")) {
             throw new AppError("No token provided", 401);
         }
 
         const token = authHeader.split(" ")[1];
-        request.user = jwt.verify(token, JWT_SECRET);
+        console.log("Token:", token);
+
+        const decoded = jwt.verify(token, JWT_SECRET);
+        console.log("Decoded token:", decoded);
+
+        request.user = decoded;
+        console.log("Set request.user to:", request.user);
+
         next();
     } catch (error) {
-        if (error.name === 'JsonWebTokenError') {
+        console.log("Auth error:", error);
+        if (error.name === "JsonWebTokenError") {
             next(new AppError("Invalid token", 401));
-        } else if (error.name === 'TokenExpiredError') {
+        } else if (error.name === "TokenExpiredError") {
             next(new AppError("Token has expired", 401));
         } else {
             next(error);
@@ -73,47 +82,49 @@ async function validateUserAuth(request, response, next) {
 
 const validateResetToken = async (req, res, next) => {
     try {
-        const { token } = req.body
+        const { token } = req.body;
         if (!token) {
-            throw new AppError('Reset token is required', 400)
+            throw new AppError("Reset token is required", 400);
         }
 
         const hashedToken = crypto
-            .createHash('sha256')
+            .createHash("sha256")
             .update(token)
-            .digest('hex')
+            .digest("hex");
 
         const user = await User.findOne({
             resetPasswordToken: hashedToken,
-            resetPasswordExpires: { $gt: Date.now() }
-        })
+            resetPasswordExpires: { $gt: Date.now() },
+        });
 
         if (!user) {
-            throw new AppError('Invalid or expired reset token', 401)
+            throw new AppError("Invalid or expired reset token", 401);
         }
 
         // Attach user to request for next middleware
-        req.user = user
-        next()
+        req.user = user;
+        next();
     } catch (error) {
-        next(error)
+        next(error);
     }
-}
+};
 
 const validateNewPassword = (req, res, next) => {
-    const { newPassword } = req.body
-    
+    const { newPassword } = req.body;
+
     if (!newPassword || newPassword.length < 8) {
-        return next(new AppError('Password must be at least 8 characters', 400))
+        return next(
+            new AppError("Password must be at least 8 characters", 400)
+        );
     }
-    
+
     // Add more password requirements as needed
-    next()
-}
+    next();
+};
 
 module.exports = {
     generateJWT,
     validateUserAuth,
     validateResetToken,
-    validateNewPassword
+    validateNewPassword,
 };

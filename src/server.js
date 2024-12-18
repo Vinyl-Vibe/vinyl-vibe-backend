@@ -9,6 +9,9 @@
 
 const express = require("express");
 const corsMiddleware = require("./utils/middleware/corsMiddleware");
+const passport = require("./auth/passport");
+const session = require("express-session");
+const MongoStore = require("connect-mongo");
 const authRoutes = require("./auth/AuthRoutes");
 const userRoutes = require("./users/UserRoutes");
 const cartRoutes = require("./cart/CartRoutes");
@@ -26,26 +29,66 @@ const { errorHandler } = require("./utils/middleware/errorMiddleware");
  */
 const app = express();
 
+// Trust proxy - needed for secure callback URLs
+app.set("trust proxy", true);
+
 // Built-in middleware
 app.use(express.json()); // Parse JSON request bodies
+app.use(corsMiddleware); // CORS headers next
 
 /**
- * Middleware order matters!
- * Why this order?
- * 1. CORS first - Must send CORS headers before any errors
- * 2. Body parsing - Need request body for most routes
- * 3. Routes - Process the actual request
- * 4. Error handling - Must be last to catch all errors
+ * Session configuration with MongoStore
+ * Why MongoStore?
+ * - Persists sessions across server restarts
+ * - Scales across multiple processes
+ * - Better for production than MemoryStore
  */
-app.use(corsMiddleware);
+app.use(
+    session({
+        secret: process.env.SESSION_SECRET,
+        resave: false,
+        saveUninitialized: true,
+        store: MongoStore.create({
+            mongoUrl: process.env.DATABASE_URL,
+            ttl: 24 * 60 * 60, // Session TTL (1 day)
+            autoRemove: "native", // Use MongoDB's TTL index
+        }),
+        cookie: {
+            secure: process.env.NODE_ENV === "production",
+            httpOnly: true,
+            sameSite: "none",
+            maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        },
+    })
+);
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Debug middleware for session (development only)
+if (process.env.NODE_ENV !== "production") {
+    app.use((req, res, next) => {
+        console.log("Session:", {
+            id: req.sessionID,
+            hasSession: !!req.session,
+            hasPassport: !!req.session?.passport,
+        });
+        next();
+    });
+}
+
+// Routes
 app.use("/auth", authRoutes);
+app.use("/products", productRoutes);
 app.use("/users", userRoutes);
 app.use("/cart", cartRoutes);
-app.use("/products", productRoutes);
 app.use("/orders", orderRoutes);
 
-// Error handling middleware - must be last
+// Error handling last
 app.use(errorHandler);
+
+console.log('JWT_SECRET is set:', !!process.env.JWT_SECRET);
 
 module.exports = {
     app,

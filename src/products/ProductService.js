@@ -90,20 +90,36 @@ const getAllProducts = async (queryParams) => {
             });
         }
 
-        // Complex URL Examples combining multiple parameters:
-        // /products?type=vinyl&search=Pink Floyd&price-min=20&price-max=50&in-stock=true
-        // (Find in-stock vinyl records by Pink Floyd between $20-$50)
+        // Handle pagination if page and limit are provided
+        if (queryParams.page || queryParams.limit) {
+            const page = parseInt(queryParams.page) || 1;
+            const limit = parseInt(queryParams.limit) || 10;
+            const skip = (page - 1) * limit;
 
-        // /products?type=turntable&price-min=200&sort=price&order=asc
-        // (Find turntables $200 and above, sorted by price low to high)
+            productsQuery = productsQuery.skip(skip).limit(limit);
 
-        // /products?search=Beatles&in-stock=true&sort=name&order=asc
-        // (Find in-stock Beatles items, sorted alphabetically)
+            // Get total count for pagination metadata
+            const total = await ProductModel.countDocuments(query);
 
-        // Execute the query and return results
+            // Execute the query
+            const products = await productsQuery;
+
+            // Return pagination metadata along with products
+            return {
+                products,
+                pagination: {
+                    currentPage: page,
+                    totalPages: Math.ceil(total / limit),
+                    totalProducts: total,
+                    productsPerPage: limit
+                }
+            };
+        }
+
+        // If no pagination requested, return all products
         return await productsQuery;
     } catch (error) {
-        throw new Error(`Error retrieving products: ${error.message}`);
+        throw error;
     }
 };
 
@@ -124,17 +140,36 @@ const getProductById = async (productId) => {
 
 /**
  * Update product in database
- * Why use findByIdAndUpdate?
+ * Why use $set for updates?
+ * - Only updates specified fields
+ * - Maintains other fields unchanged
  * - Atomic operation prevents race conditions
- * - Returns updated document
- * - Handles validation automatically
  */
-const updateProduct = async (productId, productData) => {
+const updateProduct = async (productId, updates) => {
     try {
+        // First check if product exists
+        const existingProduct = await ProductModel.findById(productId);
+        if (!existingProduct) {
+            throw new AppError("Product not found", 404);
+        }
+
+        // Handle nested albumInfo updates
+        if (updates.albumInfo) {
+            // Only update provided albumInfo fields
+            updates.albumInfo = {
+                ...existingProduct.albumInfo.toObject(),
+                ...updates.albumInfo
+            };
+        }
+
+        // Use findByIdAndUpdate with $set for partial updates
         const updatedProduct = await ProductModel.findByIdAndUpdate(
             productId,
-            productData,
-            { new: true, runValidators: true }
+            { $set: updates },
+            { 
+                new: true,          // Return updated document
+                runValidators: true // Run schema validators
+            }
         );
 
         if (!updatedProduct) {
@@ -143,7 +178,7 @@ const updateProduct = async (productId, productData) => {
 
         return updatedProduct;
     } catch (error) {
-        if (error instanceof AppError) throw error;
+        if (error.isOperational) throw error;
         throw new AppError(`Error updating product: ${error.message}`, 500);
     }
 };

@@ -1,0 +1,17 @@
+meta {
+  name: Update user by ID  [ADMIN or SELF]
+  type: http
+  seq: 3
+}
+
+patch {
+  url: http://{{base_url}}/users/675ae650b8ef937fa70062a0
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "role": "admin"
+  }
+}

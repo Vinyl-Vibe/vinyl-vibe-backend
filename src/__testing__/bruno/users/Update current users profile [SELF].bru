@@ -1,0 +1,17 @@
+meta {
+  name: Update current users profile [SELF]
+  type: http
+  seq: 5
+}
+
+patch {
+  url: http://{{base_url}}/users/profile
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "firstName": "NewName"
+  }
+}

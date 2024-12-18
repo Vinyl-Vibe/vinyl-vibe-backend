@@ -1,0 +1,29 @@
+meta {
+  name: Create Product [ADMIN]
+  type: http
+  seq: 4
+}
+
+post {
+  url: http://{{base_url}}/products
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "TEST PRODUCT",
+    "description": "",
+    "price": 39.99,
+    "type": "vinyl",
+    "albumInfo": {
+      "artist": "Nirvana",
+      "genre": "Rock",
+      "trackList": ["Track 1", "Track 2"],
+      "releaseDate": "2022-02-12T00:00:00Z"
+    },
+    "stock": 50,
+    "thumbnail": "https://google.com",
+    "images": ["https://google.com", "https://apple.com"]
+  }
+}

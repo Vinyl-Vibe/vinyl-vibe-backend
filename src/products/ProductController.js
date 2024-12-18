@@ -24,12 +24,20 @@ const createProduct = async (request, response, next) => {
 // Get all products (with optional filter by type)
 const getAllProducts = async (request, response, next) => {
     try {
-        // Pass query parameters to the service
-        const products = await ProductService.getAllProducts(request.query);
+        const result = await ProductService.getAllProducts(request.query);
 
+        // Check if result includes pagination metadata
+        if (result.pagination) {
+            return response.status(200).json({
+                success: true,
+                ...result
+            });
+        }
+
+        // Return regular response for non-paginated results
         return response.status(200).json({
             success: true,
-            products,
+            products: result
         });
     } catch (error) {
         next(new AppError("Failed to retrieve products", 500));
@@ -61,46 +69,66 @@ const getProductById = async (request, response, next) => {
 };
 
 /**
- * Update a product by ID
- * Why separate update logic in controller/service?
- * - Controller handles HTTP concerns (request/response)
- * - Service handles business logic and database operations
- * - Keeps code modular and testable
+ * Update a product by ID (admin only)
+ * Why PATCH instead of PUT?
+ * - Allows partial updates
+ * - More efficient for small changes
+ * - Better represents the intent of the operation
  */
 const updateProduct = async (request, response, next) => {
     try {
         const { id } = request.params;
         const updates = request.body;
 
-        // Why await here instead of .then()?
-        // - Cleaner error handling with try/catch
-        // - More readable synchronous-style code
-        // - Easier to debug with stack traces
-        const product = await ProductService.updateProduct(id, updates);
+        // Validate allowed fields for partial update
+        const allowedFields = [
+            'name',
+            'description',
+            'price',
+            'type',
+            'stock',
+            'brand',
+            'images',
+            'thumbnail',
+            'albumInfo'
+        ];
 
-        // Why check for product existence here AND in service?
-        // - Service ensures data integrity
-        // - Controller ensures proper HTTP response
-        // - Defence in depth principle
-        if (!product) {
-            return next(new AppError("Product not found", 404));
+        // Check for invalid fields
+        const invalidFields = Object.keys(updates).filter(
+            key => !allowedFields.includes(key)
+        );
+
+        if (invalidFields.length > 0) {
+            throw new AppError(
+                `Invalid fields: ${invalidFields.join(', ')}. Allowed fields: ${allowedFields.join(', ')}`,
+                400
+            );
         }
 
-        // Why return a success message AND the updated product?
-        // - Message provides user feedback
-        // - Updated product lets client update UI without refetch
-        // - Follows REST best practices
+        // If updating albumInfo, validate its fields
+        if (updates.albumInfo) {
+            const allowedAlbumFields = ['artist', 'genre', 'trackList', 'releaseDate'];
+            const invalidAlbumFields = Object.keys(updates.albumInfo).filter(
+                key => !allowedAlbumFields.includes(key)
+            );
+
+            if (invalidAlbumFields.length > 0) {
+                throw new AppError(
+                    `Invalid albumInfo fields: ${invalidAlbumFields.join(', ')}`,
+                    400
+                );
+            }
+        }
+
+        const product = await ProductService.updateProduct(id, updates);
+
         return response.status(200).json({
             success: true,
             message: "Product updated successfully",
             product,
         });
     } catch (error) {
-        // Why use AppError with next()?
-        // - Consistent error format across API
-        // - Centralised error handling
-        // - Proper error logging
-        next(new AppError("Failed to update product", 500));
+        next(new AppError(error.message || "Failed to update product", error.status || 500));
     }
 };
 

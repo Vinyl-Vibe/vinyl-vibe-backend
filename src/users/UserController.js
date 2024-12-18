@@ -85,8 +85,9 @@ const UserController = {
 		try {
 			const { userId } = req.params;
 			const updates = req.body;
+			const currentUser = req.user;
 
-			const updatedUser = await UserService.updateUser(userId, updates, req.user);
+			const updatedUser = await UserService.updateUser(userId, updates, currentUser);
 			if (!updatedUser) {
 				throw new AppError("User not found", 404);
 			}
@@ -130,7 +131,7 @@ const UserController = {
 		}
 	},
 
-	// PUT /users/profile - Update current user profile
+	// PATCH /users/profile - Update current user profile
 	async updateProfile(req, res, next) {
 		try {
 			const userId = req.user._id;

@@ -1,8 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const AuthController = require("./AuthController");
+const AuthService = require("./AuthService");
 const { validateUserAuth } = require("./AuthMiddleware");
-const rateLimit = require('express-rate-limit')
+const rateLimit = require("express-rate-limit");
+const passport = require("./passport");
 
 /**
  * Auth routes handle user authentication flows
@@ -19,13 +21,32 @@ router.post("/register", AuthController.register);
 router.post("/login", AuthController.login);
 router.post("/logout", AuthController.logout);
 
+// Google OAuth Routes
+router.get(
+    "/google",
+    passport.authenticate("google", {
+        scope: ["profile", "email"],
+    })
+);
+
+router.get(
+    "/google/callback",
+    passport.authenticate("google", { session: false }),
+    AuthController.socialLoginCallback
+);
+
+
 // Password reset routes (public)
 const passwordResetLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour 
-    max: 10 // limit each IP to 10 requests per hour
-})
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 10, // limit each IP to 10 requests per hour
+});
 
-router.post("/forgot-password", passwordResetLimiter, AuthController.forgotPassword);
+router.post(
+    "/forgot-password",
+    passwordResetLimiter,
+    AuthController.forgotPassword
+);
 router.post("/reset-password", AuthController.resetPassword);
 
 // Protected route - requires valid token
@@ -33,5 +54,24 @@ router.post("/reset-password", AuthController.resetPassword);
 // - Prevents unauthorised token refresh
 // - Ensures user still exists and has access
 router.get("/refresh", validateUserAuth, AuthController.refresh);
+
+// Get current user data
+router.get("/me", validateUserAuth, AuthController.getCurrentUser);
+
+// Error handling route
+router.get('/error', (req, res) => {
+    const reason = req.query.reason || 'unknown';
+    const errorMessages = {
+        authorization: 'Authorization failed',
+        token: 'Token validation failed',
+        no_user: 'No user found',
+        unknown: 'An unknown error occurred'
+    };
+
+    res.status(400).json({
+        status: 'error',
+        message: errorMessages[reason] || errorMessages.unknown
+    });
+});
 
 module.exports = router;

@@ -1,0 +1,11 @@
+meta {
+  name: Delete product by ID [ADMIN]
+  type: http
+  seq: 6
+}
+
+delete {
+  url: http://{{base_url}}/products/{{product_id}}
+  body: none
+  auth: inherit
+}

@@ -1,13 +1,14 @@
 // Importing necessary modules
 const express = require("express");
+const { validateUserAuth } = require("../auth/AuthMiddleware");
+const { requireAdmin } = require("../utils/middleware/roleMiddleware");
 const {
-	createProduct,
-	getAllProducts,
-	getProductById,
-	updateProduct,
-	deleteProduct,
+    createProduct,
+    getAllProducts,
+    getProductById,
+    updateProduct,
+    deleteProduct,
 } = require("./ProductController");
-const { requireAdmin } = require('../utils/middleware/roleMiddleware')
 
 // Initialize the router
 const router = express.Router();
@@ -19,17 +20,17 @@ const router = express.Router();
  */
 
 // Public routes - no auth needed
-router.get('/', getAllProducts)
-router.get('/:id', getProductById)
+router.get("/", getAllProducts);
+router.get("/:id", getProductById);
 
 // Protected admin-only routes
 // Why only requireAdmin?
 // - requireAdmin already includes validateUserAuth check
 // - Prevents duplicate middleware execution
 // - Cleaner route definitions
-router.post('/', requireAdmin, createProduct)
-router.put('/:id', requireAdmin, updateProduct)
-router.delete('/:id', requireAdmin, deleteProduct)
+router.post("/", validateUserAuth, requireAdmin, createProduct);
+router.patch("/:id", validateUserAuth, requireAdmin, updateProduct);
+router.delete("/:id", validateUserAuth, requireAdmin, deleteProduct);
 
 // Export the router for use in the application
 module.exports = router;

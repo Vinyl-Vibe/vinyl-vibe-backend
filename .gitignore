@@ -130,3 +130,6 @@ dist
 .pnp.*
 .cursorrules
 .DS_Store
+
+# Configuration files
+src/config/keys/
