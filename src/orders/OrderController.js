@@ -21,8 +21,6 @@ const { VALID_ORDER_STATUSES } = require("./OrderService");
 const { AppError } = require("../utils/middleware/errorMiddleware");
 const mongoose = require('mongoose');
 
-const { sendOrderConfirmation } = require("../utils/emailService");
-
 // Importing the Stripe instance
 const { createCheckoutSession } = require('../utils/stripe');
 const EmailService = require('../utils/emailService');
@@ -57,20 +55,15 @@ const createOrder = async (request, response, next) => {
         // Create Stripe Checkout session
         const session = await createCheckoutSession(newOrder);
 
-        // Send confirmation email
+        // Send confirmation email - only send once
         await EmailService.sendOrderConfirmation(request.user.email, newOrder);
 
         response.status(201).json({
             success: true,
             message: "Order created successfully",
             order: newOrder,
-            checkoutUrl: session.url // Frontend will redirect to this URL
+            checkoutUrl: session.url
         });
-
-        // Send order confirmation email after payment is successfully processed
-        // Assuming `userEmail` and `orderDetails` are available
-        await sendOrderConfirmation(request.user.email, newOrder);
-
     } catch (error) {
         next(error);
     }

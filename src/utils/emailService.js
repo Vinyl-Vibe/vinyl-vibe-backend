@@ -36,33 +36,11 @@ const EmailService = {
         }
     },
 
-<<<<<<< Updated upstream
-    // Sending an order confirmation email after successful payment
-    async sendOrderConfirmation(email, orderDetails) {
-        const orderSummary = orderDetails.items.map(item => {
-            return `<p>${item.name} (x${item.quantity}): $${(item.price * item.quantity).toFixed(2)}</p>`;
-        }).join('');
-
-        const totalAmount = (orderDetails.totalAmount / 100).toFixed(2); // Assuming amount is in cents
-
-=======
     async sendOrderConfirmation(email, order) {
->>>>>>> Stashed changes
         try {
             await resend.emails.send({
                 from: "VinylVibe <noreply@vinylvibe.live>",
                 to: email,
-<<<<<<< Updated upstream
-                subject: "Your Order Confirmation from VinylVibe",
-                html: `
-                    <h2>Thank you for your order!</h2>
-                    <p>Here are the details of your order:</p>
-                    ${orderSummary}
-                    <p><strong>Total: $${totalAmount}</strong></p>
-                    <p>We are processing your order and will notify you when it's ready for shipment.</p>
-                    <p>If you have any questions, feel free to contact us.</p>
-                    <p>Thank you for shopping with VinylVibe!</p>
-=======
                 subject: "Order Confirmation - VinylVibe",
                 html: `
                     <h2>Thank you for your order!</h2>
@@ -70,7 +48,6 @@ const EmailService = {
                     <p>Total: $${order.total}</p>
                     <p>Status: ${order.status}</p>
                     <p>We'll send you another email once your payment is confirmed.</p>
->>>>>>> Stashed changes
                 `,
             });
         } catch (error) {
