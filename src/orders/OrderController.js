@@ -36,33 +36,23 @@ const logError = (message, error) => {
 const createOrder = async (request, response, next) => {
     try {
         const orderData = request.body;
+        
+        // Only need userId and status initially
+        orderData.userId = request.user._id;
+        orderData.status = "pending";  // Order starts as pending
 
-        // Set userId based on current user unless admin specifying another user
-        if (request.user.role === "admin" && orderData.userId) {
-            // Admin can create order for other users
-            if (!mongoose.Types.ObjectId.isValid(orderData.userId)) {
-                throw new AppError("Invalid userId format", 400);
-            }
-        } else {
-            // Non-admins or admins not specifying userId use their own ID
-            orderData.userId = request.user._id;
-        }
-
-        // Create order in pending state
-        orderData.status = "pending";
+        // Create order without shipping address
         const newOrder = await createOrderService(orderData);
 
-        // Create Stripe Checkout session
+        // Create Stripe session for payment
         const session = await createCheckoutSession(newOrder);
 
-        // Send confirmation email - only send once
-        await EmailService.sendOrderConfirmation(request.user.email, newOrder);
-
+        // Return checkout URL to frontend
         response.status(201).json({
             success: true,
             message: "Order created successfully",
             order: newOrder,
-            checkoutUrl: session.url,
+            checkoutUrl: session.url
         });
     } catch (error) {
         next(error);

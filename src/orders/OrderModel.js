@@ -58,6 +58,7 @@ const OrderSchema = new mongoose.Schema(
                 "shipped",
                 "delivered",
                 "returned",
+                "payment received",
             ], // Restrict status to specific values
             default: "pending", // Default value if not provided
         },

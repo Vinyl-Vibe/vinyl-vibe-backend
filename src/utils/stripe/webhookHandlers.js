@@ -12,27 +12,23 @@ const { AppError } = require('../middleware/errorMiddleware');
 const handleCheckoutComplete = async (session) => {
     try {
         const orderId = session.metadata.orderId;
-        const userId = session.metadata.userId;
         
-        // Get shipping address from Stripe
-        const shippingAddress = session.shipping?.address ? {
-            street: session.shipping.address.line1,
-            suburb: session.shipping.address.city,
-            postcode: session.shipping.address.postal_code,
-            state: session.shipping.address.state,
-            country: session.shipping.address.country,
-        } : null;
-
-        // Update order status and add shipping address
+        // Update order with status AND shipping address from Stripe
         await OrderModel.findByIdAndUpdate(orderId, { 
-            status: 'completed',
-            shippingAddress, // Add shipping address to order
+            status: 'payment received',
+            shippingAddress: session.shipping?.address ? {
+                street: session.shipping.address.line1,
+                suburb: session.shipping.address.city,
+                postcode: session.shipping.address.postal_code,
+                state: session.shipping.address.state,
+                country: session.shipping.address.country,
+            } : null
         });
 
-        // If we got a shipping address, update user's profile
-        if (shippingAddress) {
-            await User.findByIdAndUpdate(userId, {
-                'profile.address': shippingAddress
+        // Also update user's profile with the shipping address
+        if (session.shipping?.address) {
+            await User.findByIdAndUpdate(session.metadata.userId, {
+                'profile.address': session.shipping.address
             });
         }
 

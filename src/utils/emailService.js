@@ -47,7 +47,7 @@ const EmailService = {
                     <p>Order ID: ${order._id}</p>
                     <p>Total: $${order.total}</p>
                     <p>Status: ${order.status}</p>
-                    <p>We'll send you another email once your payment is confirmed.</p>
+                    <p>We'll send you another email once your order is shipped.</p>
                 `,
             });
         } catch (error) {
