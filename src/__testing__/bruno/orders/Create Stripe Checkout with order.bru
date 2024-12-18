@@ -1,14 +1,13 @@
 meta {
-    name: Create Stripe Checkout with order
-    type: http
-    seq: 2
+  name: Create Stripe Checkout with order
+  type: http
+  seq: 2
 }
 
-
 post {
-    url: http://{{base_url}}/orders
-    body: json
-    auth: inherit
+  url: http://{{base_url}}/orders
+  body: json
+  auth: inherit
 }
 
 body:json {
@@ -28,4 +27,4 @@ body:json {
             "country": "Australia"
         }
     }
-} 
+}
