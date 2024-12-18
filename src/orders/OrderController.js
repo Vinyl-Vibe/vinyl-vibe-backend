@@ -21,6 +21,9 @@ const { VALID_ORDER_STATUSES } = require("./OrderService");
 const { AppError } = require("../utils/middleware/errorMiddleware");
 const mongoose = require('mongoose');
 
+// Importing the Stripe instance
+const stripe = require('../utils/stripe');
+
 // Utility for structured error logging
 // This function logs errors in a consistent format to assist with debugging
 const logError = (message, error) => {
@@ -46,10 +49,20 @@ const createOrder = async (request, response, next) => {
 
         const newOrder = await createOrderService(orderData);
 
+        // Stripe integration: Create a Payment Intent after the order is created
+        const { amount } = newOrder;  // Assuming the order contains the total amount
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount, // The total amount to charge (in cents)
+            currency: 'aud', // Australian Dollar
+            payment_method_types: ['card'], // Accept card payments
+        });
+
+        // Send the client secret for Stripe to the frontend so they can complete the payment
         response.status(201).json({
             success: true,
             message: "Order created successfully",
             order: newOrder,
+            clientSecret: paymentIntent.client_secret, // Stripe client secret to confirm the payment
         });
     } catch (error) {
         next(error);
@@ -75,10 +88,10 @@ const getOrderById = async (request, response, next) => {
         // Ensure `request.user._id` matches the `userId` of the order (also ensure they are ObjectId types)
         if (request.user.role !== 'admin' && 
             order.userId.toString() !== request.user._id.toString()) {
-            throw new AppError("Not authorized to view this order", 403);
+            throw new AppError("Not authorised to view this order", 403);
         }
 
-        // If authorized, return the order details
+        // If authorised, return the order details
         response.status(200).json({
             success: true,
             order,
