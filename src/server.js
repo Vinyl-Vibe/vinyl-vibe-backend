@@ -18,6 +18,7 @@ const cartRoutes = require("./cart/CartRoutes");
 const productRoutes = require("./products/ProductRoutes");
 const orderRoutes = require("./orders/OrderRoutes");
 const { errorHandler } = require("./utils/middleware/errorMiddleware");
+const { handleWebhook } = require('./utils/stripe/webhookController');
 
 /**
  * Main Express application setup
@@ -77,6 +78,12 @@ if (process.env.NODE_ENV !== "production") {
         next();
     });
 }
+
+// Raw body for Stripe webhooks
+app.use('/webhook', express.raw({ type: 'application/json' }));
+
+// Stripe webhook endpoint
+app.post('/webhook', handleWebhook);
 
 // Routes
 app.use("/auth", authRoutes);

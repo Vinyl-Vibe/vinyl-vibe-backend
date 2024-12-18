@@ -24,7 +24,8 @@ const mongoose = require('mongoose');
 const { sendOrderConfirmation } = require("../utils/emailService");
 
 // Importing the Stripe instance
-const stripe = require('../utils/stripe');
+const { createCheckoutSession } = require('../utils/stripe');
+const EmailService = require('../utils/emailService');
 
 // Utility for structured error logging
 // This function logs errors in a consistent format to assist with debugging
@@ -49,22 +50,21 @@ const createOrder = async (request, response, next) => {
             orderData.userId = request.user._id;
         }
 
+        // Create order in pending state
+        orderData.status = 'pending';
         const newOrder = await createOrderService(orderData);
 
-        // Stripe integration: Create a Payment Intent after the order is created
-        const { amount } = newOrder;  // Assuming the order contains the total amount
-        const paymentIntent = await stripe.paymentIntents.create({
-            amount, // The total amount to charge (in cents)
-            currency: 'aud', // Australian Dollar
-            payment_method_types: ['card'], // Accept card payments
-        });
+        // Create Stripe Checkout session
+        const session = await createCheckoutSession(newOrder);
 
-        // Send the client secret for Stripe to the frontend so they can complete the payment
+        // Send confirmation email
+        await EmailService.sendOrderConfirmation(request.user.email, newOrder);
+
         response.status(201).json({
             success: true,
             message: "Order created successfully",
             order: newOrder,
-            clientSecret: paymentIntent.client_secret, // Stripe client secret to confirm the payment
+            checkoutUrl: session.url // Frontend will redirect to this URL
         });
 
         // Send order confirmation email after payment is successfully processed
