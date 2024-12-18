@@ -1,0 +1,15 @@
+meta {
+  name: Get orders by status [ADMIN or SELF]
+  type: http
+  seq: 7
+}
+
+get {
+  url: http://localhost:8080/orders?status=pending
+  body: none
+  auth: inherit
+}
+
+params:query {
+  status: pending
+}

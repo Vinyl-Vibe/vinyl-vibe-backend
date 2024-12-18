@@ -1,0 +1,17 @@
+meta {
+  name: Update order by ID [ADMIN or SELF]
+  type: http
+  seq: 5
+}
+
+patch {
+  url: http://localhost:8080/orders/67614e733de60802c372f6c8
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+      "status": "shipped"
+  }
+}
