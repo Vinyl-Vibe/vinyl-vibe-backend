@@ -2,24 +2,6 @@ const jwt = require("jsonwebtoken");
 const { CartModel } = require("./CartModel")
 const { User } = require("../users/UserModel")
 
-// Middleware to check if the user is authenticated using JWT
-// This short-circuit logic is to check whether or not there is a Bearer Token in the Authorization header
-const isAuthenticated = (req, res, next) => {
-    const token = req.header("Authorization"); // Expecting 'Bearer <token>'
-    if (!token) { 
-        return res.status(401).json({ message: "Unauthorized: No token provided" });
-    }
-
-    try {
-        // JWT payload contains _id from User model
-        const decoded = jwt.verify(token.split(" ")[1], process.env.JWT_SECRET_KEY);
-        req.user = decoded; // Contains _id, email, role
-        next();
-    } catch (error) {
-        return res.status(401).json({ message: "Unauthorized: Invalid token" });
-    }
-};
-
 // Middleware to validate the cart data in the request body
 // Short-circuit logic to make sure the cart contains some valid data
 const validateCartData = (req, res, next) => {
@@ -105,7 +87,6 @@ const checkUserExists = async (req, res, next) => {
 };
 
 module.exports = {
-    isAuthenticated,
     validateCartData,
     fetchUserCart,
     checkUserExists,

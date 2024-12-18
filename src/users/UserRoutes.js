@@ -16,7 +16,7 @@ const {
  * - Better code organization
  */
 
-// All user routes require authentication
+// All routes require authentication
 router.use(validateUserAuth);
 
 // Profile routes must come before parameterized routes
@@ -25,10 +25,10 @@ router.use(validateUserAuth);
 router.get("/profile", UserController.getProfile);
 router.patch("/profile", UserController.updateProfile);
 
-// Route definitions with role-based access control
-router.get("/", requireAdmin, UserController.getAllUsers); // Admin only get all users
-router.get("/:userId", canModifyUser, UserController.getUserById); // Own user or admin
-router.patch("/:userId", canModifyUser, UserController.updateUser); // Own user or admin
-router.delete("/:userId", canModifyUser, UserController.deleteUser); // Own user or admin
+// Admin-only routes
+router.get("/", requireAdmin, UserController.getAllUsers);
+router.get("/:userId", canModifyUser, UserController.getUserById);
+router.patch("/:userId", canModifyUser, UserController.updateUser);
+router.delete("/:userId", canModifyUser, UserController.deleteUser);
 
 module.exports = router;

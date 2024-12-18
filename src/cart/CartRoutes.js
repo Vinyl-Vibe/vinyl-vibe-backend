@@ -8,7 +8,7 @@ const {
     getFilteredCart 
 } = require("./CartController");
 const { validateUserAuth } = require("../auth/AuthMiddleware");
-const { requireCartItemOwnership } = require("../utils/middleware/roleMiddleware");
+const { requireRole } = require("../utils/middleware/roleMiddleware");
 
 // Initilaising the router
 const router = express.Router();
@@ -43,15 +43,15 @@ router.post("/", addItem);
 
 // Update the quantity of an item in the cart
 // PUT /cart/:itemId 
-router.put("/:itemId", requireCartItemOwnership("itemId"), updateItemQuantity);
+router.put("/:itemId", requireRole('user'), updateItemQuantity);
 
 // Remove an item from the cart
 // DELETE /cart/:itemId
-router.delete("/:itemId", requireCartItemOwnership("itemId"), removeItem);
+router.delete("/:itemId", requireRole('user'), removeItem);
 
 // Retrieve a cart filtered by user ID (query parameter)
 // GET /cart?user-id=<userId>
-router.get("/filter", requireCartItemOwnership("userId"), getFilteredCart);
+router.get("/filter", requireRole('admin'), getFilteredCart);
 
 // Export the router for use in the application
 module.exports = router;

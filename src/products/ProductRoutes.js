@@ -1,7 +1,7 @@
 // Importing necessary modules
 const express = require("express");
 const { validateUserAuth } = require("../auth/AuthMiddleware");
-const { requireAdmin } = require("../utils/middleware/roleMiddleware");
+const { requireRole } = require("../utils/middleware/roleMiddleware");
 const {
     createProduct,
     getAllProducts,
@@ -28,9 +28,9 @@ router.get("/:id", getProductById);
 // - requireAdmin already includes validateUserAuth check
 // - Prevents duplicate middleware execution
 // - Cleaner route definitions
-router.post("/", validateUserAuth, requireAdmin, createProduct);
-router.patch("/:id", validateUserAuth, requireAdmin, updateProduct);
-router.delete("/:id", validateUserAuth, requireAdmin, deleteProduct);
+router.post("/", validateUserAuth, requireRole('admin'), createProduct);
+router.patch("/:id", validateUserAuth, requireRole('admin'), updateProduct);
+router.delete("/:id", validateUserAuth, requireRole('admin'), deleteProduct);
 
 // Export the router for use in the application
 module.exports = router;
