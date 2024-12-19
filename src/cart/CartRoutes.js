@@ -1,6 +1,7 @@
 // Importing necessay modules
 const express = require("express");
 const { 
+    getAllCarts, 
     getCart, 
     addItem, 
     updateItemQuantity, 
@@ -26,31 +27,30 @@ router.use(validateUserAuth);
  * Cart Routes
  *
  * Route List:
- * 1. GET    /cart                     - Retrieve the current cart for the authenticated user
- * 2. POST   /cart                     - Add a new item to the cart
- * 3. PUT    /cart/:itemId             - Update the quantity of an item in the cart
- * 4. DELETE /cart/:itemId             - Remove an item from the cart
- * 5. GET    /cart?user-id=<userId>    - Retrieve a cart filtered by user ID (search/filter)
+ * 1. GET    /carts                    - Get all carts (admin only)
+ * 2. GET    /carts/me                 - Get current user's cart
+ * 3. POST   /carts                    - Add a new item to the cart
+ * 4. PUT    /carts/:itemId           - Update the quantity of an item in the cart
+ * 5. DELETE /carts/:itemId           - Remove an item from the cart
+ * 6. GET    /carts/filter            - Filter carts by user ID (admin only)
  */
 
-// Retrieve the current cart for the authenticated user
-// GET /cart
-router.get("/", getCart);
+// Get all carts (admin only)
+router.get("/", requireRole('admin'), getAllCarts);
+
+// Get current user's cart
+router.get("/me", getCart);
 
 // Add a new item to the cart
-// POST /cart
 router.post("/", addItem);
 
 // Update the quantity of an item in the cart
-// PUT /cart/:itemId 
 router.put("/:itemId", requireRole('user'), updateItemQuantity);
 
 // Remove an item from the cart
-// DELETE /cart/:itemId
 router.delete("/:itemId", requireRole('user'), removeItem);
 
-// Retrieve a cart filtered by user ID (query parameter)
-// GET /cart?user-id=<userId>
+// Filter carts by user ID (admin only)
 router.get("/filter", requireRole('admin'), getFilteredCart);
 
 // Export the router for use in the application

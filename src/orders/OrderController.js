@@ -116,14 +116,30 @@ const parseDateFilters = (startDate, endDate) => {
 // Handles the GET /orders endpoint with query parameters for filtering
 const getAllOrders = async (request, response, next) => {
     try {
-        const { status, userId, startDate, endDate } = request.query;
+        const { status, userId, startDate, endDate, page, limit } = request.query;
         const filters = {};
+
+        // Only apply pagination if either page or limit is provided
+        let usePagination = page !== undefined || limit !== undefined;
+        let pageNum = 1;
+        let limitNum = 10;
+
+        if (usePagination) {
+            pageNum = parseInt(page || 1);
+            limitNum = parseInt(limit || 10);
+            
+            if (isNaN(pageNum) || pageNum < 1) {
+                throw new AppError('Page must be a positive number', 400);
+            }
+            if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
+                throw new AppError('Limit must be between 1 and 100', 400);
+            }
+        }
 
         // If not admin, only show user's own orders
         if (request.user.role !== "admin") {
             filters.userId = request.user._id;
         } else if (userId) {
-            // Admin can filter by specific userId if provided
             if (!mongoose.Types.ObjectId.isValid(userId)) {
                 throw new AppError("Invalid userId format", 400);
             }
@@ -134,9 +150,7 @@ const getAllOrders = async (request, response, next) => {
         if (status) {
             if (!VALID_ORDER_STATUSES.includes(status)) {
                 throw new AppError(
-                    `Invalid status. Valid values are: ${VALID_ORDER_STATUSES.join(
-                        ", "
-                    )}`,
+                    `Invalid status. Valid values are: ${VALID_ORDER_STATUSES.join(", ")}`,
                     400
                 );
             }
@@ -146,14 +160,39 @@ const getAllOrders = async (request, response, next) => {
         // Apply date filters if provided
         Object.assign(filters, parseDateFilters(startDate, endDate));
 
-        console.log("Filters being used:", filters);
+        if (usePagination) {
+            // Get paginated results and total count
+            const skip = (pageNum - 1) * limitNum;
+            const [orders, totalOrders] = await Promise.all([
+                getAllOrdersService(filters, skip, limitNum),
+                getAllOrdersService(filters, null, null, true)
+            ]);
 
-        const orders = await getAllOrdersService(filters);
+            // Calculate pagination metadata
+            const totalPages = Math.ceil(totalOrders / limitNum);
+            const hasNextPage = pageNum < totalPages;
+            const hasPrevPage = pageNum > 1;
 
-        response.status(200).json({
-            success: true,
-            orders,
-        });
+            response.status(200).json({
+                status: "success",
+                pagination: {
+                    total: totalOrders,
+                    page: pageNum,
+                    limit: limitNum,
+                    totalPages,
+                    hasNextPage,
+                    hasPrevPage
+                },
+                orders
+            });
+        } else {
+            // Get all orders without pagination
+            const orders = await getAllOrdersService(filters);
+            response.status(200).json({
+                status: "success",
+                orders
+            });
+        }
     } catch (error) {
         next(error);
     }
@@ -214,18 +253,45 @@ const deleteOrder = async (request, response, next) => {
 // Controller for getting orders for the currently authenticated user
 const getMyOrders = async (request, response, next) => {
     try {
-        // Get the user ID from the authenticated user
+        const { page = 1, limit = 10 } = request.query;
         const userId = request.user._id;
 
-        // Create filters for the current user
-        const filters = { userId: new mongoose.Types.ObjectId(userId) };
+        // Convert page and limit to numbers and validate
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
+        
+        if (isNaN(pageNum) || pageNum < 1) {
+            throw new AppError('Page must be a positive number', 400);
+        }
+        if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
+            throw new AppError('Limit must be between 1 and 100', 400);
+        }
 
-        // Get orders using the existing service
-        const orders = await getAllOrdersService(filters);
+        const filters = { userId: new mongoose.Types.ObjectId(userId) };
+        
+        // Get paginated results and total count
+        const skip = (pageNum - 1) * limitNum;
+        const [orders, totalOrders] = await Promise.all([
+            getAllOrdersService(filters, skip, limitNum),
+            getAllOrdersService(filters, null, null, true) // Count only
+        ]);
+
+        // Calculate pagination metadata
+        const totalPages = Math.ceil(totalOrders / limitNum);
+        const hasNextPage = pageNum < totalPages;
+        const hasPrevPage = pageNum > 1;
 
         response.status(200).json({
-            success: true,
-            orders,
+            status: "success",
+            pagination: {
+                total: totalOrders,
+                page: pageNum,
+                limit: limitNum,
+                totalPages,
+                hasNextPage,
+                hasPrevPage
+            },
+            orders
         });
     } catch (error) {
         next(error);

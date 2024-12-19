@@ -1,0 +1,11 @@
+meta {
+  name: Get current users cart
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://{{base_url}}/carts/me
+  body: none
+  auth: inherit
+}

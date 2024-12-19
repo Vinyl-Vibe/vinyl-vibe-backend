@@ -89,7 +89,7 @@ app.post('/webhook', handleWebhook);
 app.use("/auth", authRoutes);
 app.use("/products", productRoutes);
 app.use("/users", userRoutes);
-app.use("/cart", cartRoutes);
+app.use("/carts", cartRoutes);
 app.use("/orders", orderRoutes);
 
 // Error handling last

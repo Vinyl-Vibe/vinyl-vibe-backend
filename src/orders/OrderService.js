@@ -81,15 +81,24 @@ const getOrder = async (orderId) => {
 };
 
 // Service for getting all orders with optional filters
-const getAllOrders = async (filters = {}) => {
+const getAllOrders = async (filters = {}, skip = null, limit = null, countOnly = false) => {
     try {
-        const orders = await OrderModel.find(filters)
-            .populate("userId", "name email")
-            .populate("products.productId", "name price");
-        
-        return orders;
+        if (countOnly) {
+            return await OrderModel.countDocuments(filters);
+        }
+
+        let query = OrderModel.find(filters)
+            .populate('userId', 'email profile')
+            .populate('products.productId', 'name price type thumbnail');
+
+        // Only apply pagination if both skip and limit are provided
+        if (skip !== null && limit !== null) {
+            query = query.skip(skip).limit(limit);
+        }
+
+        return await query.lean();
     } catch (error) {
-        throw new AppError("Unable to fetch orders", 500);
+        throw new AppError('Error fetching orders', 500);
     }
 };
 
