@@ -247,14 +247,12 @@ const AuthController = {
      */
     async getCurrentUser(req, res, next) {
         try {
-            // Get fresh user data
             const user = await UserService.getUserById(req.user._id);
 
             if (!user) {
-                throw new AppError("User not found", 404);
+                throw new AppError('User not found', 404);
             }
 
-            // Return user data without generating new token
             res.json({
                 user: {
                     id: user._id,
@@ -265,6 +263,8 @@ const AuthController = {
                         provider: login.provider,
                         email: login.email,
                     })),
+                    createdAt: user.createdAt,
+                    updatedAt: user.updatedAt
                 },
             });
         } catch (error) {
