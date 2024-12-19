@@ -3,7 +3,16 @@ const { AppError } = require("../utils/middleware/errorMiddleware");
 const { ProductModel } = require("../products/ProductModel");
 
 // Constants for order validation
-const VALID_ORDER_STATUSES = ['pending', 'completed', 'canceled', 'shipped', 'delivered', 'returned'];
+const VALID_ORDER_STATUSES = [
+    "pending",
+    "preparing to ship",
+    "shipped",
+    "delivered",
+    "returned",
+    "completed",
+    "cancelled",
+    "payment received",
+];
 
 // Validation helpers
 const validateOrderData = (orderData) => {
@@ -11,13 +20,20 @@ const validateOrderData = (orderData) => {
 
     // Validate products array
     if (!Array.isArray(products) || products.length === 0) {
-        throw new AppError('Order must include at least one product', 400);
+        throw new AppError("Order must include at least one product", 400);
     }
 
     // Validate each product
-    products.forEach(product => {
-        if (!product.productId || typeof product.quantity !== 'number' || product.quantity < 1) {
-            throw new AppError('Each product must have a valid productId and quantity', 400);
+    products.forEach((product) => {
+        if (
+            !product.productId ||
+            typeof product.quantity !== "number" ||
+            product.quantity < 1
+        ) {
+            throw new AppError(
+                "Each product must have a valid productId and quantity",
+                400
+            );
         }
     });
 };
@@ -30,45 +46,53 @@ const calculatePrice = (price, quantity) => {
 
 // Service for creating a new order
 const createOrder = async (orderData) => {
-    console.log('OrderData received:', orderData);
-    
+    console.log("OrderData received:", orderData);
+
     validateOrderData(orderData);
-    
+
     // Populate product details to calculate total
-    const populatedProducts = await Promise.all(orderData.products.map(async (item) => {
-        const product = await ProductModel.findById(item.productId);
-        if (!product) {
-            throw new AppError(`Product not found: ${item.productId}`, 404);
-        }
-        console.log('Found product:', product);
-        return {
-            productId: product._id,
-            quantity: item.quantity,
-            price: product.price
-        };
-    }));
+    const populatedProducts = await Promise.all(
+        orderData.products.map(async (item) => {
+            const product = await ProductModel.findById(item.productId);
+            if (!product) {
+                throw new AppError(`Product not found: ${item.productId}`, 404);
+            }
+            console.log("Found product:", product);
+            return {
+                productId: product._id,
+                quantity: item.quantity,
+                price: product.price,
+            };
+        })
+    );
 
     // Calculate total with proper floating point handling
     const total = populatedProducts.reduce((sum, item) => {
-        return calculatePrice(sum + calculatePrice(item.price, item.quantity), 1);
+        return calculatePrice(
+            sum + calculatePrice(item.price, item.quantity),
+            1
+        );
     }, 0);
 
     // Create order with calculated total
     const newOrder = new OrderModel({
         ...orderData,
         products: populatedProducts,
-        total
+        total,
     });
-    
+
     await newOrder.save();
-    
+
     // Populate and log the result
     const populatedOrder = await OrderModel.findById(newOrder._id)
-        .populate('userId', 'email profile')
-        .populate('products.productId', 'name description price images thumbnail');
-    
-    console.log('Populated order:', populatedOrder);
-    
+        .populate("userId", "email profile")
+        .populate(
+            "products.productId",
+            "name description price images thumbnail"
+        );
+
+    console.log("Populated order:", populatedOrder);
+
     return populatedOrder;
 };
 
@@ -81,15 +105,20 @@ const getOrder = async (orderId) => {
 };
 
 // Service for getting all orders with optional filters
-const getAllOrders = async (filters = {}, skip = null, limit = null, countOnly = false) => {
+const getAllOrders = async (
+    filters = {},
+    skip = null,
+    limit = null,
+    countOnly = false
+) => {
     try {
         if (countOnly) {
             return await OrderModel.countDocuments(filters);
         }
 
         let query = OrderModel.find(filters)
-            .populate('userId', 'email profile')
-            .populate('products.productId', 'name price type thumbnail');
+            .populate("userId", "email profile")
+            .populate("products.productId", "name price type thumbnail");
 
         // Only apply pagination if both skip and limit are provided
         if (skip !== null && limit !== null) {
@@ -98,7 +127,7 @@ const getAllOrders = async (filters = {}, skip = null, limit = null, countOnly =
 
         return await query.lean();
     } catch (error) {
-        throw new AppError('Error fetching orders', 500);
+        throw new AppError("Error fetching orders", 500);
     }
 };
 
@@ -107,14 +136,25 @@ const updateOrder = async (orderId, updateData) => {
     try {
         // If status is being updated, validate it
         if (updateData.status) {
-            if (!VALID_ORDER_STATUSES.includes(updateData.status.toLowerCase())) {
-                throw new AppError(`Invalid status. Valid statuses are: ${VALID_ORDER_STATUSES.join(', ')}`, 400);
+            if (
+                !VALID_ORDER_STATUSES.includes(updateData.status.toLowerCase())
+            ) {
+                throw new AppError(
+                    `Invalid status. Valid statuses are: ${VALID_ORDER_STATUSES.join(
+                        ", "
+                    )}`,
+                    400
+                );
             }
             updateData.status = updateData.status.toLowerCase();
         }
 
         // Validate the update data if it's a full update
-        if (updateData.products || updateData.total || updateData.shippingAddress) {
+        if (
+            updateData.products ||
+            updateData.total ||
+            updateData.shippingAddress
+        ) {
             validateOrderData(updateData);
         }
 
@@ -122,8 +162,9 @@ const updateOrder = async (orderId, updateData) => {
             orderId,
             { $set: updateData },
             { new: true, runValidators: true }
-        ).populate("userId", "name email")
-         .populate("products.productId", "name price");
+        )
+            .populate("userId", "name email")
+            .populate("products.productId", "name price");
 
         if (!updatedOrder) {
             throw new AppError("Order not found", 404);
@@ -147,7 +188,7 @@ const getOrdersByUserId = async (userId) => {
         const orders = await OrderModel.find({ userId })
             .populate("userId", "name email")
             .populate("products.productId", "name price");
-        
+
         return orders;
     } catch (error) {
         throw new AppError("Unable to fetch user orders", 500);
@@ -161,5 +202,5 @@ module.exports = {
     updateOrder,
     deleteOrder,
     VALID_ORDER_STATUSES,
-    getOrdersByUserId
+    getOrdersByUserId,
 };

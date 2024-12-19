@@ -53,11 +53,12 @@ const OrderSchema = new mongoose.Schema(
             type: String,
             enum: [
                 "pending",
-                "completed",
-                "canceled",
+                "preparing to ship",
                 "shipped",
                 "delivered",
                 "returned",
+                "completed",
+                "cancelled",
                 "payment received",
             ], // Restrict status to specific values
             default: "pending", // Default value if not provided
