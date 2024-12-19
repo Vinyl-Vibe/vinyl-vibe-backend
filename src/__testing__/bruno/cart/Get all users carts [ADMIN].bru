@@ -1,0 +1,11 @@
+meta {
+  name: Get all users carts [ADMIN]
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://{{base_url}}/carts
+  body: none
+  auth: inherit
+}

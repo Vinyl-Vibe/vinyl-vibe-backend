@@ -18,7 +18,8 @@ const {
     getAllOrders,
     updateOrder,
     deleteOrder,
-    getMyOrders
+    getMyOrders,
+    getUserOrders
 } = require("./OrderController");
 
 // Import authentication middleware
@@ -30,9 +31,11 @@ const { requireRole } = require("../utils/middleware/roleMiddleware");
 // Apply authentication middleware to all order routes
 router.use(validateUserAuth);
 
-// Regular users can only access their own orders
-// This route must come BEFORE the /:orderId route
-router.get("/my-orders", getMyOrders);
+// Get authenticated user's orders
+router.get("/me", getMyOrders);
+
+// Admin route to get orders by user ID
+router.get("/user/:userId", requireRole('admin'), getUserOrders);
 
 // GET route to fetch all orders (admin only)
 router.get("/", getAllOrders);

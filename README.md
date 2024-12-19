@@ -298,3 +298,34 @@ Non-vinyl product:
 	"updatedAt": "2024-01-02T15:30:00Z"
 }
 ```
+### Stripe Checkout Flow with Resend Email Confirmation
+
+1. **User Adds Items to Cart**:  
+   User adds products to the cart, and the cart is updated in the backend database.
+
+2. **Cart Updated in Database**:  
+   The backend saves the cart state with product details in the database.
+
+3. **User Clicks Checkout**:  
+   User clicks the checkout button; the frontend sends cart details to the backend.
+
+4. **Order Created in Database**:  
+   The backend creates an order in the database using the cart items and calculates the total amount.
+
+5. **Payment Initiation**:  
+   Backend creates a **Payment Intent** with Stripe, providing the total amount to be charged.
+
+6. **Frontend Handles Payment**:  
+   Backend sends the `clientSecret` (from Stripe) to the frontend. The frontend uses Stripe's JS library to confirm the payment with the `clientSecret`.
+
+7. **Stripe Payment Confirmation**:  
+   Stripe processes the payment; frontend receives success/failure feedback.
+
+8. **Webhook Handling (Optional)**:  
+   If configured, Stripe sends a webhook to the backend to notify the payment status (e.g., successful payment).
+
+9. **Order Finalization**:  
+   Backend updates the order status to "paid" and triggers post-purchase actions like sending the confirmation email via **Resend**.
+
+10. **Email Confirmation with Resend**:  
+    **Resend** is used to send an order confirmation email to the user with order details after the payment is confirmed.

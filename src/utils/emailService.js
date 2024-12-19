@@ -13,6 +13,7 @@ const { AppError } = require("./middleware/errorMiddleware");
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const EmailService = {
+    // Sending a password reset email
     async sendPasswordReset(email, resetToken) {
         const resetLink = `https://vinylvibe.live/reset-password?token=${resetToken}`;
 
@@ -32,6 +33,26 @@ const EmailService = {
         } catch (error) {
             console.error("Email send error:", error);
             throw new AppError("Failed to send password reset email", 500);
+        }
+    },
+
+    async sendOrderConfirmation(email, order) {
+        try {
+            await resend.emails.send({
+                from: "VinylVibe <noreply@vinylvibe.live>",
+                to: email,
+                subject: "Order Confirmation - VinylVibe",
+                html: `
+                    <h2>Thank you for your order!</h2>
+                    <p>Order ID: ${order._id}</p>
+                    <p>Total: $${order.total}</p>
+                    <p>Status: ${order.status}</p>
+                    <p>We'll send you another email once your order is shipped.</p>
+                `,
+            });
+        } catch (error) {
+            console.error("Email send error:", error);
+            throw new AppError("Failed to send order confirmation email", 500);
         }
     },
 };

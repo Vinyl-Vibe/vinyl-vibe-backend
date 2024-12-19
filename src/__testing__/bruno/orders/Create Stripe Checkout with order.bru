@@ -1,0 +1,26 @@
+meta {
+  name: Create Stripe Checkout with order
+  type: http
+  seq: 4
+}
+
+post {
+  url: http://{{base_url}}/orders
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+      "products": [
+          {
+              "productId": "675ad9b77d85749f98a85685",
+              "quantity": 8
+          },
+          {
+              "productId": "675ad9b77d85749f98a85686",
+              "quantity": 2
+          }
+      ]
+  }
+}

@@ -1,50 +1,99 @@
 const { OrderModel } = require("./OrderModel");
 const { AppError } = require("../utils/middleware/errorMiddleware");
+const { ProductModel } = require("../products/ProductModel");
 
 // Constants for order validation
-const VALID_ORDER_STATUSES = ['pending', 'completed', 'canceled', 'shipped', 'delivered', 'returned'];
+const VALID_ORDER_STATUSES = [
+    "pending",
+    "preparing to ship",
+    "shipped",
+    "delivered",
+    "returned",
+    "completed",
+    "cancelled",
+    "payment received",
+];
 
 // Validation helpers
 const validateOrderData = (orderData) => {
-    const { products, total, status, shippingAddress } = orderData;
+    const { products } = orderData;
 
     // Validate products array
     if (!Array.isArray(products) || products.length === 0) {
-        throw new AppError('Order must include at least one product', 400);
+        throw new AppError("Order must include at least one product", 400);
     }
 
     // Validate each product
-    products.forEach(product => {
-        if (!product.productId || typeof product.quantity !== 'number' || product.quantity < 1) {
-            throw new AppError('Each product must have a valid productId and quantity', 400);
+    products.forEach((product) => {
+        if (
+            !product.productId ||
+            typeof product.quantity !== "number" ||
+            product.quantity < 1
+        ) {
+            throw new AppError(
+                "Each product must have a valid productId and quantity",
+                400
+            );
         }
     });
+};
 
-    // Validate total
-    if (typeof total !== 'number' || total <= 0) {
-        throw new AppError('Total must be a positive number', 400);
-    }
-
-    // Validate status
-    if (!VALID_ORDER_STATUSES.includes(status?.toLowerCase())) {
-        throw new AppError(`Invalid status. Valid statuses are: ${VALID_ORDER_STATUSES.join(', ')}`, 400);
-    }
-
-    // Validate shipping address
-    const requiredAddressFields = ['street', 'suburb', 'postcode', 'state', 'country'];
-    if (!shippingAddress || !requiredAddressFields.every(field => shippingAddress[field])) {
-        throw new AppError('Shipping address must include street, suburb, postcode, state, and country', 400);
-    }
+// Helper function to handle floating point calculations
+const calculatePrice = (price, quantity) => {
+    // Convert to cents, multiply, then convert back to dollars
+    return Math.round(price * 100 * quantity) / 100;
 };
 
 // Service for creating a new order
 const createOrder = async (orderData) => {
-    // Validate order data before creating
+    console.log("OrderData received:", orderData);
+
     validateOrderData(orderData);
-    
-    const newOrder = new OrderModel(orderData);
+
+    // Populate product details to calculate total
+    const populatedProducts = await Promise.all(
+        orderData.products.map(async (item) => {
+            const product = await ProductModel.findById(item.productId);
+            if (!product) {
+                throw new AppError(`Product not found: ${item.productId}`, 404);
+            }
+            console.log("Found product:", product);
+            return {
+                productId: product._id,
+                quantity: item.quantity,
+                price: product.price,
+            };
+        })
+    );
+
+    // Calculate total with proper floating point handling
+    const total = populatedProducts.reduce((sum, item) => {
+        return calculatePrice(
+            sum + calculatePrice(item.price, item.quantity),
+            1
+        );
+    }, 0);
+
+    // Create order with calculated total
+    const newOrder = new OrderModel({
+        ...orderData,
+        products: populatedProducts,
+        total,
+    });
+
     await newOrder.save();
-    return newOrder;
+
+    // Populate and log the result
+    const populatedOrder = await OrderModel.findById(newOrder._id)
+        .populate("userId", "email profile")
+        .populate(
+            "products.productId",
+            "name description price images thumbnail"
+        );
+
+    console.log("Populated order:", populatedOrder);
+
+    return populatedOrder;
 };
 
 // Service for getting a specific order by ID
@@ -56,15 +105,29 @@ const getOrder = async (orderId) => {
 };
 
 // Service for getting all orders with optional filters
-const getAllOrders = async (filters = {}) => {
+const getAllOrders = async (
+    filters = {},
+    skip = null,
+    limit = null,
+    countOnly = false
+) => {
     try {
-        const orders = await OrderModel.find(filters)
-            .populate("userId", "name email")
-            .populate("products.productId", "name price");
-        
-        return orders;
+        if (countOnly) {
+            return await OrderModel.countDocuments(filters);
+        }
+
+        let query = OrderModel.find(filters)
+            .populate("userId", "email profile")
+            .populate("products.productId", "name price type thumbnail");
+
+        // Only apply pagination if both skip and limit are provided
+        if (skip !== null && limit !== null) {
+            query = query.skip(skip).limit(limit);
+        }
+
+        return await query.lean();
     } catch (error) {
-        throw new AppError("Unable to fetch orders", 500);
+        throw new AppError("Error fetching orders", 500);
     }
 };
 
@@ -73,14 +136,25 @@ const updateOrder = async (orderId, updateData) => {
     try {
         // If status is being updated, validate it
         if (updateData.status) {
-            if (!VALID_ORDER_STATUSES.includes(updateData.status.toLowerCase())) {
-                throw new AppError(`Invalid status. Valid statuses are: ${VALID_ORDER_STATUSES.join(', ')}`, 400);
+            if (
+                !VALID_ORDER_STATUSES.includes(updateData.status.toLowerCase())
+            ) {
+                throw new AppError(
+                    `Invalid status. Valid statuses are: ${VALID_ORDER_STATUSES.join(
+                        ", "
+                    )}`,
+                    400
+                );
             }
             updateData.status = updateData.status.toLowerCase();
         }
 
         // Validate the update data if it's a full update
-        if (updateData.products || updateData.total || updateData.shippingAddress) {
+        if (
+            updateData.products ||
+            updateData.total ||
+            updateData.shippingAddress
+        ) {
             validateOrderData(updateData);
         }
 
@@ -88,8 +162,9 @@ const updateOrder = async (orderId, updateData) => {
             orderId,
             { $set: updateData },
             { new: true, runValidators: true }
-        ).populate("userId", "name email")
-         .populate("products.productId", "name price");
+        )
+            .populate("userId", "name email")
+            .populate("products.productId", "name price");
 
         if (!updatedOrder) {
             throw new AppError("Order not found", 404);
@@ -113,7 +188,7 @@ const getOrdersByUserId = async (userId) => {
         const orders = await OrderModel.find({ userId })
             .populate("userId", "name email")
             .populate("products.productId", "name price");
-        
+
         return orders;
     } catch (error) {
         throw new AppError("Unable to fetch user orders", 500);
@@ -127,5 +202,5 @@ module.exports = {
     updateOrder,
     deleteOrder,
     VALID_ORDER_STATUSES,
-    getOrdersByUserId
+    getOrdersByUserId,
 };
