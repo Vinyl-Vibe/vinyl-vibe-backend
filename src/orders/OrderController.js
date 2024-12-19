@@ -218,10 +218,34 @@ const getMyOrders = async (request, response, next) => {
         const userId = request.user._id;
 
         // Create filters for the current user
-        const filters = { userId: mongoose.Types.ObjectId(userId) };
+        const filters = { userId: new mongoose.Types.ObjectId(userId) };
 
         // Get orders using the existing service
         const orders = await getAllOrdersService(filters);
+
+        response.status(200).json({
+            success: true,
+            orders,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Add this new controller function
+const getUserOrders = async (request, response, next) => {
+    try {
+        const { userId } = request.params;
+
+        // Validate userId format
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            throw new AppError("Invalid user ID format", 400);
+        }
+
+        // Get orders for specific user
+        const orders = await getAllOrdersService({ 
+            userId: new mongoose.Types.ObjectId(userId)
+        });
 
         response.status(200).json({
             success: true,
@@ -240,4 +264,5 @@ module.exports = {
     updateOrder,
     deleteOrder,
     getMyOrders,
+    getUserOrders
 };

@@ -1,0 +1,11 @@
+meta {
+  name: Get all my orders [ADMIN or SELF]
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://{{base_url}}/orders/me
+  body: none
+  auth: inherit
+}
