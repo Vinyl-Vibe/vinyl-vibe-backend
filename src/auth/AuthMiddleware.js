@@ -39,7 +39,6 @@ function generateJWT(userId, email, role) {
             userId: userId,
             email,
             role,
-            isAdmin: role === "admin",
         },
         JWT_SECRET,
         { expiresIn: "7d" }
