@@ -80,7 +80,7 @@ const updateItemQuantity = async (req, res, next) => {
             "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––",
             "\n🛒 Attempting to update cart quantity",
             "\nUser:",
-            req.user?.email || "Unknown user",
+            req.user.email,
             "\nItem ID:",
             req.params.itemId,
             "\nNew Quantity:",
