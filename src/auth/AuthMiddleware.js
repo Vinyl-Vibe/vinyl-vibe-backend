@@ -61,9 +61,6 @@ async function validateUserAuth(request, response, next) {
 
         const decoded = jwt.verify(token, JWT_SECRET);
 
-        // Debug log to see what's in the token
-        console.log("Decoded token contents:", decoded);
-
         request.user = decoded;
 
         next();
