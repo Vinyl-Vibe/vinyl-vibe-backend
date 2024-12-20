@@ -79,6 +79,13 @@ const AuthController = {
 
     async logout(req, res, next) {
         try {
+            console.log(
+                "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––",
+                "\n👋 User logged out:",
+                req.user?.email || "Unknown user",
+                "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––\n"
+            );
+
             // With JWTs, logout is handled client-side by removing the token
             // We still have this endpoint for:
             // 1. Future token blacklisting implementation
@@ -257,7 +264,7 @@ const AuthController = {
             const user = await UserService.getUserById(req.user._id);
 
             if (!user) {
-                throw new AppError('User not found', 404);
+                throw new AppError("User not found", 404);
             }
 
             res.json({
@@ -271,7 +278,7 @@ const AuthController = {
                         email: login.email,
                     })),
                     createdAt: user.createdAt,
-                    updatedAt: user.updatedAt
+                    updatedAt: user.updatedAt,
                 },
             });
         } catch (error) {

@@ -12,12 +12,6 @@ const { AppError } = require("../middleware/errorMiddleware");
  */
 const handleCheckoutComplete = async (session) => {
     try {
-        console.log("Starting checkout completion process with session:", {
-            id: session.id,
-            orderId: session.metadata?.orderId,
-            userId: session.metadata?.userId,
-            hasShipping: !!session.shipping,
-        });
 
         if (!session.metadata?.orderId || !session.metadata?.userId) {
             throw new Error("Missing required metadata: orderId or userId");
@@ -26,12 +20,12 @@ const handleCheckoutComplete = async (session) => {
         const orderId = session.metadata.orderId;
         const userId = session.metadata.userId;
 
-        // Log shipping address if present
-        if (session.shipping?.address) {
-            console.log("Shipping address received:", session.shipping.address);
-        }
-
         // Update order status and shipping address
+        const existingOrder = await OrderModel.findById(orderId).populate(
+            "userId",
+            "email"
+        );
+
         const updatedOrder = await OrderModel.findByIdAndUpdate(
             orderId,
             {
@@ -49,7 +43,19 @@ const handleCheckoutComplete = async (session) => {
             { new: true }
         );
 
-        console.log("Order updated:", updatedOrder ? "Success" : "Failed");
+        console.log(
+            "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––",
+            "\n📝 Order updated by Stripe webhook.",
+            "\nOrder status changed for user:",
+            existingOrder.userId?.email || "Unknown user",
+            "\nOrder ID:",
+            orderId,
+            "\nFrom:",
+            existingOrder.status,
+            "\nTo:",
+            updatedOrder.status,
+            "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––\n"
+        );
 
         // Update user's profile with shipping address
         if (session.shipping?.address) {
@@ -66,10 +72,16 @@ const handleCheckoutComplete = async (session) => {
                 },
                 { new: true }
             );
-            console.log(
-                "User profile updated:",
-                updatedUser ? "Success" : "Failed"
-            );
+
+            if (updatedUser) {
+                console.log(
+                    "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––",
+                    "\n📝 User profile updated by Stripe webhook.",
+                    "\nAddress updated for user:",
+                    updatedUser.email || "Unknown user",
+                    "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––\n"
+                );
+            }
         }
 
         // Clear the user's cart
@@ -89,15 +101,31 @@ const handleCheckoutComplete = async (session) => {
             populatedOrder.userId.email,
             populatedOrder
         );
-        console.log("Confirmation email sent to:", populatedOrder.userId.email);
+
+        console.log(
+            "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––",
+            "\n✉️ Confirmation email sent to:",
+            populatedOrder.userId?.email || "Unknown user",
+            "\nOrder ID:",
+            orderId,
+            "\nOrder total: $",
+            populatedOrder.total,
+            "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––\n"
+        );
 
         return true;
     } catch (error) {
-        console.error("Detailed error in handleCheckoutComplete:", {
-            message: error.message,
-            stack: error.stack,
-            code: error.code,
-        });
+        console.error(
+            "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––",
+            "\n❌ Error in handleCheckoutComplete:",
+            "\nMessage:",
+            error.message,
+            "\nStack:",
+            error.stack,
+            "\nCode:",
+            error.code,
+            "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––\n"
+        );
         throw error;
     }
 };
