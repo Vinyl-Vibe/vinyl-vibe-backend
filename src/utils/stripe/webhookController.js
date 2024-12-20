@@ -1,21 +1,32 @@
-const { stripe } = require('./index');
-const { handleCheckoutComplete } = require('./webhookHandlers');
-const { AppError } = require('../middleware/errorMiddleware');
+const { stripe } = require("./index");
+const { handleCheckoutComplete } = require("./webhookHandlers");
+const { AppError } = require("../middleware/errorMiddleware");
 
 /**
  * Main webhook handler that routes different webhook events
  * to their specific handlers
- * 
+ *
  * Why use raw body?
  * - Stripe requires the raw request body to verify webhook signatures
  * - This prevents webhook spoofing and ensures security
  */
 const handleWebhook = async (req, res) => {
-    // Get the raw body as a buffer
     const payload = req.body;
-    const sig = req.headers['stripe-signature'];
-    
+    const sig = req.headers["stripe-signature"];
+
+    console.log(
+        "Webhook received with signature:",
+        sig ? "Present" : "Missing"
+    );
+    console.log("Headers:", req.headers);
+    console.log("Body type:", typeof payload);
+    console.log("Body is Buffer:", Buffer.isBuffer(payload));
+
     try {
+        if (!process.env.STRIPE_WEBHOOK_SECRET) {
+            throw new Error("STRIPE_WEBHOOK_SECRET is not configured");
+        }
+
         // Verify webhook signature with raw payload
         const event = stripe.webhooks.constructEvent(
             payload,
@@ -23,18 +34,21 @@ const handleWebhook = async (req, res) => {
             process.env.STRIPE_WEBHOOK_SECRET
         );
 
-        // Log the event for debugging
-        console.log('Webhook received:', {
+        console.log("Webhook event constructed successfully:", {
             type: event.type,
-            id: event.id
+            id: event.id,
         });
 
         // Handle different event types
         switch (event.type) {
-            case 'checkout.session.completed':
-                console.log('Processing checkout completion...');
+            case "checkout.session.completed":
+                console.log("Processing checkout completion...", {
+                    sessionId: event.data.object.id,
+                    customerId: event.data.object.customer,
+                    metadata: event.data.object.metadata,
+                });
                 await handleCheckoutComplete(event.data.object);
-                console.log('Checkout completion processed successfully');
+                console.log("Checkout completion processed successfully");
                 break;
             default:
                 console.log(`Unhandled event type ${event.type}`);
@@ -42,11 +56,17 @@ const handleWebhook = async (req, res) => {
 
         res.json({ received: true });
     } catch (err) {
-        console.error('Webhook Error:', err.message);
+        console.error("Webhook Error Details:", {
+            error: err.message,
+            stack: err.stack,
+            sigHeader: sig,
+            bodyType: typeof payload,
+            isBuffer: Buffer.isBuffer(payload),
+        });
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 };
 
 module.exports = {
-    handleWebhook
-}; 
+    handleWebhook,
+};

@@ -93,7 +93,6 @@ const AuthService = {
 				.update(token)
 				.digest('hex')
 
-			console.log('Debug - Looking for token:', hashedToken);
 
 			// Find user with valid token
 			const user = await User.findOne({
@@ -101,7 +100,6 @@ const AuthService = {
 				resetPasswordExpires: { $gt: Date.now() }
 			})
 
-			console.log('Debug - User found:', user ? 'Yes' : 'No');
 
 			if (!user) {
 				throw new AppError('Invalid or expired reset token', 401)
@@ -112,12 +110,10 @@ const AuthService = {
 			user.resetPasswordToken = undefined
 			user.resetPasswordExpires = undefined
 			
-			console.log('Debug - About to save user');
 			
 			// Save and return updated user
 			const savedUser = await user.save()
 			
-			console.log('Debug - User saved successfully');
 
 			return savedUser
 		} catch (error) {

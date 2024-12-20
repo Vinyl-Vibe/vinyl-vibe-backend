@@ -18,7 +18,7 @@ const cartRoutes = require("./cart/CartRoutes");
 const productRoutes = require("./products/ProductRoutes");
 const orderRoutes = require("./orders/OrderRoutes");
 const { errorHandler } = require("./utils/middleware/errorMiddleware");
-const { handleWebhook } = require('./utils/stripe/webhookController');
+const { handleWebhook } = require("./utils/stripe/webhookController");
 
 /**
  * Main Express application setup
@@ -33,9 +33,14 @@ const app = express();
 // Trust proxy - needed for secure callback URLs
 app.set("trust proxy", true);
 
-// Built-in middleware
-app.use(express.json()); // Parse JSON request bodies
-app.use(corsMiddleware); // CORS headers next
+// IMPORTANT: Handle Stripe webhook route BEFORE body parsing middleware
+app.post("/webhook", express.raw({ type: "application/json" }), handleWebhook);
+
+// CORS should be before other middleware but after webhook
+app.use(corsMiddleware);
+
+// Regular middleware for other routes
+app.use(express.json()); // Parse JSON request bodies for all other routes
 
 /**
  * Session configuration with MongoStore
@@ -67,21 +72,6 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Debug middleware for session (development only)
-if (process.env.NODE_ENV !== "production") {
-    app.use((req, res, next) => {
-        console.log("Session:", {
-            id: req.sessionID,
-            hasSession: !!req.session,
-            hasPassport: !!req.session?.passport,
-        });
-        next();
-    });
-}
-
-// Raw body for Stripe webhooks
-app.post('/webhook', express.raw({ type: 'application/json' }), handleWebhook);
-
 // Routes
 app.use("/auth", authRoutes);
 app.use("/products", productRoutes);
@@ -91,8 +81,6 @@ app.use("/orders", orderRoutes);
 
 // Error handling last
 app.use(errorHandler);
-
-console.log('JWT_SECRET is set:', !!process.env.JWT_SECRET);
 
 module.exports = {
     app,

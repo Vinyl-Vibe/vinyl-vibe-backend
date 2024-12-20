@@ -1,4 +1,5 @@
 const { OrderModel } = require("./OrderModel");
+const { User } = require("../users/UserModel");
 const { AppError } = require("../utils/middleware/errorMiddleware");
 const { ProductModel } = require("../products/ProductModel");
 
@@ -46,7 +47,8 @@ const calculatePrice = (price, quantity) => {
 
 // Service for creating a new order
 const createOrder = async (orderData) => {
-    console.log("OrderData received:", orderData);
+    // Get user email for logging
+    const user = await User.findById(orderData.userId).select("email");
 
     validateOrderData(orderData);
 
@@ -57,7 +59,6 @@ const createOrder = async (orderData) => {
             if (!product) {
                 throw new AppError(`Product not found: ${item.productId}`, 404);
             }
-            console.log("Found product:", product);
             return {
                 productId: product._id,
                 quantity: item.quantity,
@@ -90,8 +91,6 @@ const createOrder = async (orderData) => {
             "products.productId",
             "name description price images thumbnail"
         );
-
-    console.log("Populated order:", populatedOrder);
 
     return populatedOrder;
 };

@@ -27,6 +27,8 @@ const AuthController = {
             const newUser = await UserService.createUser({ email, password });
             const token = await AuthService.generateToken(newUser);
 
+            console.log("👨🏼‍💼 Registration successful for user:", newUser.email);
+
             // 201 status indicates resource creation
             // We return both token and user data to prevent an extra API call from the client
             res.status(201).json({
@@ -57,6 +59,8 @@ const AuthController = {
                 password,
             });
 
+            console.log("🔑 Login successful for user:", user.email);
+
             res.json({
                 token,
                 user: {
@@ -69,6 +73,7 @@ const AuthController = {
             // Convert all login errors to 401 Invalid credentials
             // Why? Don't reveal specific auth failures (security best practice)
             next(new AppError("Invalid credentials", 401));
+            console.log("🛑 Login failed for user:", email);
         }
     },
 
@@ -218,6 +223,8 @@ const AuthController = {
             if (req.session) {
                 req.session.destroy();
             }
+
+            console.log("🔑 Social login successful for user:", user.email);
 
             // Redirect to frontend with token for both dev and prod
             const frontendUrl =

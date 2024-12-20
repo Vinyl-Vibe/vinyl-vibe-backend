@@ -23,20 +23,12 @@ const { CartModel } = require('../../cart/CartModel');
 const requireRole = (...roles) => {
     return (req, res, next) => {
         try {
-            // Debug logs
-            console.log('Incoming request user:', req.user);
-            console.log('Required roles:', roles);
-            console.log('User role:', req.user?.role);
             
             if (!req.user || !req.user.role) {
-                console.log('Authentication failed - no user or role');
                 throw new AppError('User not authenticated', 401);
             }
 
             if (!roles.includes(req.user.role)) {
-                console.log('Authorization failed - role mismatch');
-                console.log('User role:', req.user.role);
-                console.log('Required roles:', roles);
                 throw new AppError('Insufficient permissions', 403);
             }
 

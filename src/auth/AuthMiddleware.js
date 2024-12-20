@@ -52,24 +52,19 @@ function generateJWT(userId, email, role) {
 async function validateUserAuth(request, response, next) {
     try {
         const authHeader = request.headers.authorization;
-        console.log("Auth header:", authHeader);
 
         if (!authHeader?.startsWith("Bearer ")) {
             throw new AppError("No token provided", 401);
         }
 
         const token = authHeader.split(" ")[1];
-        console.log("Token:", token);
 
         const decoded = jwt.verify(token, JWT_SECRET);
-        console.log("Decoded token:", decoded);
 
         request.user = decoded;
-        console.log("Set request.user to:", request.user);
 
         next();
     } catch (error) {
-        console.log("Auth error:", error);
         if (error.name === "JsonWebTokenError") {
             next(new AppError("Invalid token", 401));
         } else if (error.name === "TokenExpiredError") {

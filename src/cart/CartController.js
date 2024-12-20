@@ -53,6 +53,13 @@ const addItem = async (req, res, next) => {
             cart = await CartService.addOrUpdateProducts(cart, products);
         }
 
+        console.log(
+            "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––",
+            "\n🛒 An item was added to cart by:",
+            req.user?.email || `User ID: ${req.user?._id || "Unknown"}`,
+            "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––\n"
+        );
+
         res.status(200).json({
             status: "success",
             cart: cart,

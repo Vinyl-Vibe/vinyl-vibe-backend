@@ -9,8 +9,6 @@ const mongoose = require("mongoose");
  * - DevOps best practice: Configuration as environment
  */
 async function dbConnect() {
-    // Log connection string (without credentials in production)
-    console.log("Attempting to connect to:", process.env.DATABASE_URL);
 
     // Fallback to local MongoDB if no DATABASE_URL provided
     // Why use npm_package_name?
@@ -29,13 +27,13 @@ async function dbConnect() {
         // - Ensures connection before server starts
         // - Prevents race conditions
         await mongoose.connect(databaseUrl);
-        console.log("Successfully connected to MongoDB!");
+        console.log("📀 Successfully connected to MongoDB Atlas!");
     } catch (error) {
         // Log error and rethrow
         // Why rethrow?
         // - Allows calling code to handle connection failure
         // - Prevents server from starting with no database
-        console.error("Database connection error:", error);
+        console.error("🛑 Failed to connect to MongoDB Atlas:", error);
         throw error;
     }
 }

@@ -36,10 +36,10 @@ const logError = (message, error) => {
 const createOrder = async (request, response, next) => {
     try {
         const orderData = request.body;
-        
+
         // Only need userId and status initially
         orderData.userId = request.user._id;
-        orderData.status = "pending";  // Order starts as pending
+        orderData.status = "pending"; // Order starts as pending
 
         // Create order without shipping address
         const newOrder = await createOrderService(orderData);
@@ -47,12 +47,21 @@ const createOrder = async (request, response, next) => {
         // Create Stripe session for payment
         const session = await createCheckoutSession(newOrder);
 
+        console.log(
+            "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––",
+            "\n📦 New order created by:",
+            request.user?.email || "Unknown user",
+            "\n💵 order total: $",
+            newOrder.total,
+            "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––\n"
+        );
+
         // Return checkout URL to frontend
         response.status(201).json({
             success: true,
             message: "Order created successfully",
             order: newOrder,
-            checkoutUrl: session.url
+            checkoutUrl: session.url,
         });
     } catch (error) {
         next(error);
@@ -116,7 +125,8 @@ const parseDateFilters = (startDate, endDate) => {
 // Handles the GET /orders endpoint with query parameters for filtering
 const getAllOrders = async (request, response, next) => {
     try {
-        const { status, userId, startDate, endDate, page, limit } = request.query;
+        const { status, userId, startDate, endDate, page, limit } =
+            request.query;
         const filters = {};
 
         // Only apply pagination if either page or limit is provided
@@ -127,12 +137,12 @@ const getAllOrders = async (request, response, next) => {
         if (usePagination) {
             pageNum = parseInt(page || 1);
             limitNum = parseInt(limit || 10);
-            
+
             if (isNaN(pageNum) || pageNum < 1) {
-                throw new AppError('Page must be a positive number', 400);
+                throw new AppError("Page must be a positive number", 400);
             }
             if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
-                throw new AppError('Limit must be between 1 and 100', 400);
+                throw new AppError("Limit must be between 1 and 100", 400);
             }
         }
 
@@ -150,7 +160,9 @@ const getAllOrders = async (request, response, next) => {
         if (status) {
             if (!VALID_ORDER_STATUSES.includes(status)) {
                 throw new AppError(
-                    `Invalid status. Valid values are: ${VALID_ORDER_STATUSES.join(", ")}`,
+                    `Invalid status. Valid values are: ${VALID_ORDER_STATUSES.join(
+                        ", "
+                    )}`,
                     400
                 );
             }
@@ -165,7 +177,7 @@ const getAllOrders = async (request, response, next) => {
             const skip = (pageNum - 1) * limitNum;
             const [orders, totalOrders] = await Promise.all([
                 getAllOrdersService(filters, skip, limitNum),
-                getAllOrdersService(filters, null, null, true)
+                getAllOrdersService(filters, null, null, true),
             ]);
 
             // Calculate pagination metadata
@@ -181,16 +193,16 @@ const getAllOrders = async (request, response, next) => {
                     limit: limitNum,
                     totalPages,
                     hasNextPage,
-                    hasPrevPage
+                    hasPrevPage,
                 },
-                orders
+                orders,
             });
         } else {
             // Get all orders without pagination
             const orders = await getAllOrdersService(filters);
             response.status(200).json({
                 status: "success",
-                orders
+                orders,
             });
         }
     } catch (error) {
@@ -219,6 +231,22 @@ const updateOrder = async (request, response, next) => {
         }
 
         const updatedOrder = await updateOrderService(orderId, updateData);
+
+        // Create a summary of what changed
+        const changes = Object.keys(updateData)
+            .map((key) => `${key}: ${updateData[key]}`)
+            .join(", ");
+
+        console.log(
+            "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––",
+            "\n📝 Order updated by:",
+            request.user?.email || "Unknown user",
+            "\nChanges made:",
+            changes,
+            "\nOrder ID:",
+            orderId,
+            "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––\n"
+        );
 
         response.status(200).json({
             success: true,
@@ -259,21 +287,21 @@ const getMyOrders = async (request, response, next) => {
         // Convert page and limit to numbers and validate
         const pageNum = parseInt(page);
         const limitNum = parseInt(limit);
-        
+
         if (isNaN(pageNum) || pageNum < 1) {
-            throw new AppError('Page must be a positive number', 400);
+            throw new AppError("Page must be a positive number", 400);
         }
         if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
-            throw new AppError('Limit must be between 1 and 100', 400);
+            throw new AppError("Limit must be between 1 and 100", 400);
         }
 
         const filters = { userId: new mongoose.Types.ObjectId(userId) };
-        
+
         // Get paginated results and total count
         const skip = (pageNum - 1) * limitNum;
         const [orders, totalOrders] = await Promise.all([
             getAllOrdersService(filters, skip, limitNum),
-            getAllOrdersService(filters, null, null, true) // Count only
+            getAllOrdersService(filters, null, null, true), // Count only
         ]);
 
         // Calculate pagination metadata
@@ -289,9 +317,9 @@ const getMyOrders = async (request, response, next) => {
                 limit: limitNum,
                 totalPages,
                 hasNextPage,
-                hasPrevPage
+                hasPrevPage,
             },
-            orders
+            orders,
         });
     } catch (error) {
         next(error);
@@ -309,8 +337,8 @@ const getUserOrders = async (request, response, next) => {
         }
 
         // Get orders for specific user
-        const orders = await getAllOrdersService({ 
-            userId: new mongoose.Types.ObjectId(userId)
+        const orders = await getAllOrdersService({
+            userId: new mongoose.Types.ObjectId(userId),
         });
 
         response.status(200).json({
@@ -330,5 +358,5 @@ module.exports = {
     updateOrder,
     deleteOrder,
     getMyOrders,
-    getUserOrders
+    getUserOrders,
 };

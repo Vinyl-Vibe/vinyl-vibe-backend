@@ -9,6 +9,19 @@ const createProduct = async (request, response, next) => {
         const productData = request.body;
         const product = await ProductService.createProduct(productData);
 
+        console.log(
+            "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––",
+            "\n✨ New product created by:",
+            request.user?.email || "Unknown user",
+            "\n   Name:",
+            productData.name,
+            "\n   Type:",
+            productData.type,
+            "\n   Price: $",
+            productData.price,
+            "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––\n"
+        );
+
         // Send back the created product in the response
         return response.status(200).json({
             success: true,
@@ -30,14 +43,14 @@ const getAllProducts = async (request, response, next) => {
         if (result.pagination) {
             return response.status(200).json({
                 success: true,
-                ...result
+                ...result,
             });
         }
 
         // Return regular response for non-paginated results
         return response.status(200).json({
             success: true,
-            products: result
+            products: result,
         });
     } catch (error) {
         next(new AppError("Failed to retrieve products", 500));
@@ -82,39 +95,48 @@ const updateProduct = async (request, response, next) => {
 
         // Validate allowed fields for partial update
         const allowedFields = [
-            'name',
-            'description',
-            'price',
-            'type',
-            'stock',
-            'brand',
-            'images',
-            'thumbnail',
-            'albumInfo'
+            "name",
+            "description",
+            "price",
+            "type",
+            "stock",
+            "brand",
+            "images",
+            "thumbnail",
+            "albumInfo",
         ];
 
         // Check for invalid fields
         const invalidFields = Object.keys(updates).filter(
-            key => !allowedFields.includes(key)
+            (key) => !allowedFields.includes(key)
         );
 
         if (invalidFields.length > 0) {
             throw new AppError(
-                `Invalid fields: ${invalidFields.join(', ')}. Allowed fields: ${allowedFields.join(', ')}`,
+                `Invalid fields: ${invalidFields.join(
+                    ", "
+                )}. Allowed fields: ${allowedFields.join(", ")}`,
                 400
             );
         }
 
         // If updating albumInfo, validate its fields
         if (updates.albumInfo) {
-            const allowedAlbumFields = ['artist', 'genre', 'trackList', 'releaseDate'];
+            const allowedAlbumFields = [
+                "artist",
+                "genre",
+                "trackList",
+                "releaseDate",
+            ];
             const invalidAlbumFields = Object.keys(updates.albumInfo).filter(
-                key => !allowedAlbumFields.includes(key)
+                (key) => !allowedAlbumFields.includes(key)
             );
 
             if (invalidAlbumFields.length > 0) {
                 throw new AppError(
-                    `Invalid albumInfo fields: ${invalidAlbumFields.join(', ')}`,
+                    `Invalid albumInfo fields: ${invalidAlbumFields.join(
+                        ", "
+                    )}`,
                     400
                 );
             }
@@ -128,7 +150,12 @@ const updateProduct = async (request, response, next) => {
             product,
         });
     } catch (error) {
-        next(new AppError(error.message || "Failed to update product", error.status || 500));
+        next(
+            new AppError(
+                error.message || "Failed to update product",
+                error.status || 500
+            )
+        );
     }
 };
 

@@ -34,9 +34,9 @@ const PORT = process.env.PORT || 8080;
 app.listen(PORT, async () => {
 	try {
 		await dbConnect();
-		console.log("Server is running on port " + PORT);
+		console.log("🚀 Server is running on port " + PORT);
 	} catch (error) {
-		console.error("Failed to start server:", error);
+		console.error("🛑 Failed to start server:", error);
 		process.exit(1); // Exit with error code
 	}
 });
