@@ -80,10 +80,7 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 // Raw body for Stripe webhooks
-app.use('/webhook', express.raw({ type: 'application/json' }));
-
-// Stripe webhook endpoint
-app.post('/webhook', handleWebhook);
+app.post('/webhook', express.raw({ type: 'application/json' }), handleWebhook);
 
 // Routes
 app.use("/auth", authRoutes);

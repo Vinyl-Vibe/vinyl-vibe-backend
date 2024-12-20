@@ -1,5 +1,6 @@
 const { OrderModel } = require('../../orders/OrderModel');
 const { User } = require('../../users/UserModel');
+const { CartModel } = require('../../cart/CartModel');
 const EmailService = require('../emailService');
 const { AppError } = require('../middleware/errorMiddleware');
 
@@ -11,39 +12,72 @@ const { AppError } = require('../middleware/errorMiddleware');
  */
 const handleCheckoutComplete = async (session) => {
     try {
-        const orderId = session.metadata.orderId;
-        
-        // Update order with status AND shipping address from Stripe
-        await OrderModel.findByIdAndUpdate(orderId, { 
-            status: 'payment received',
-            shippingAddress: session.shipping?.address ? {
-                street: session.shipping.address.line1,
-                suburb: session.shipping.address.city,
-                postcode: session.shipping.address.postal_code,
-                state: session.shipping.address.state,
-                country: session.shipping.address.country,
-            } : null
+        console.log('Processing checkout session:', {
+            orderId: session.metadata.orderId,
+            userId: session.metadata.userId
         });
 
-        // Also update user's profile with the shipping address
+        const orderId = session.metadata.orderId;
+        const userId = session.metadata.userId;
+        
+        // Update order status and shipping address
+        const updatedOrder = await OrderModel.findByIdAndUpdate(
+            orderId,
+            { 
+                status: 'payment received',
+                shippingAddress: session.shipping?.address ? {
+                    street: session.shipping.address.line1,
+                    suburb: session.shipping.address.city,
+                    postcode: session.shipping.address.postal_code,
+                    state: session.shipping.address.state,
+                    country: session.shipping.address.country,
+                } : null
+            },
+            { new: true }
+        );
+
+        console.log('Order updated:', updatedOrder);
+
+        // Update user's profile with shipping address
         if (session.shipping?.address) {
-            await User.findByIdAndUpdate(session.metadata.userId, {
-                'profile.address': session.shipping.address
-            });
+            const updatedUser = await User.findByIdAndUpdate(
+                userId,
+                {
+                    'profile.address': {
+                        street: session.shipping.address.line1,
+                        city: session.shipping.address.city,
+                        postcode: session.shipping.address.postal_code,
+                        state: session.shipping.address.state,
+                        country: session.shipping.address.country,
+                    }
+                },
+                { new: true }
+            );
+            console.log('User profile updated:', updatedUser);
         }
 
-        // Get order details and send confirmation
-        const order = await OrderModel.findById(orderId)
-            .populate('userId', 'email');
+        // Clear the user's cart
+        const clearedCart = await CartModel.findOneAndDelete({ userId });
+        console.log('Cart cleared:', clearedCart);
+
+        // Send confirmation email
+        const populatedOrder = await OrderModel.findById(orderId)
+            .populate('userId', 'email')
+            .populate('products.productId', 'name price');
             
-        if (!order) {
+        if (!populatedOrder) {
             throw new AppError('Order not found', 404);
         }
 
-        await EmailService.sendOrderConfirmation(order.userId.email, order);
+        await EmailService.sendOrderConfirmation(
+            populatedOrder.userId.email, 
+            populatedOrder
+        );
+        console.log('Confirmation email sent to:', populatedOrder.userId.email);
+
         return true;
     } catch (error) {
-        console.error('Error handling checkout completion:', error);
+        console.error('Error in handleCheckoutComplete:', error);
         throw error;
     }
 };
