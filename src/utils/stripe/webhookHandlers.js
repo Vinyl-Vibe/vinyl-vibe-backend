@@ -12,7 +12,6 @@ const { AppError } = require("../middleware/errorMiddleware");
  */
 const handleCheckoutComplete = async (session) => {
     try {
-
         if (!session.metadata?.orderId || !session.metadata?.userId) {
             throw new Error("Missing required metadata: orderId or userId");
         }
@@ -86,7 +85,6 @@ const handleCheckoutComplete = async (session) => {
 
         // Clear the user's cart
         const clearedCart = await CartModel.findOneAndDelete({ userId });
-        console.log("Cart cleared:", clearedCart ? "Success" : "Failed");
 
         // Send confirmation email
         const populatedOrder = await OrderModel.findById(orderId)
@@ -106,6 +104,8 @@ const handleCheckoutComplete = async (session) => {
             "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––",
             "\n✉️ Confirmation email sent to:",
             populatedOrder.userId?.email || "Unknown user",
+            "\n Users cart cleared:",
+            clearedCart ? "Success" : "Failed",
             "\nOrder ID:",
             orderId,
             "\nOrder total: $",
