@@ -1,17 +1,17 @@
 // Importing necessay modules
 const express = require("express");
-const { 
-    getAllCarts, 
-    getCart, 
-    addItem, 
-    updateItemQuantity, 
-    removeItem, 
-    getFilteredCart 
+const {
+    getAllCarts,
+    getCart,
+    addItem,
+    updateItemQuantity,
+    removeItem,
+    getFilteredCart,
 } = require("./CartController");
 const { validateUserAuth } = require("../auth/AuthMiddleware");
 const { requireRole } = require("../utils/middleware/roleMiddleware");
 
-// Initilaising the router
+// Initialising the router
 const router = express.Router();
 
 /**
@@ -36,7 +36,7 @@ router.use(validateUserAuth);
  */
 
 // Get all carts (admin only)
-router.get("/", requireRole('admin'), getAllCarts);
+router.get("/", requireRole("admin"), getAllCarts);
 
 // Get current user's cart
 router.get("/me", getCart);
@@ -45,13 +45,13 @@ router.get("/me", getCart);
 router.post("/", addItem);
 
 // Update the quantity of an item in the cart
-router.put("/:itemId", requireRole('user'), updateItemQuantity);
+router.put("/:itemId", updateItemQuantity);
 
 // Remove an item from the cart
-router.delete("/:itemId", requireRole('user'), removeItem);
+router.delete("/:itemId", removeItem);
 
 // Filter carts by user ID (admin only)
-router.get("/filter", requireRole('admin'), getFilteredCart);
+router.get("/filter", requireRole("admin"), getFilteredCart);
 
 // Export the router for use in the application
 module.exports = router;

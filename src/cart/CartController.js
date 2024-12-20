@@ -76,6 +76,18 @@ const addItem = async (req, res, next) => {
 
 const updateItemQuantity = async (req, res, next) => {
     try {
+        console.log(
+            "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––",
+            "\n🛒 Attempting to update cart quantity",
+            "\nUser:",
+            req.user?.email || "Unknown user",
+            "\nItem ID:",
+            req.params.itemId,
+            "\nNew Quantity:",
+            req.body.quantity,
+            "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––\n"
+        );
+
         const { itemId } = req.params;
         const { quantity } = req.body;
 
