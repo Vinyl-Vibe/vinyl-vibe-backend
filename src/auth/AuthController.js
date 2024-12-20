@@ -52,8 +52,6 @@ const AuthController = {
                 throw new AppError("Email and password are required", 400);
             }
 
-            // AuthService.login handles credential verification and token generation
-            // We separate this logic because it might be used by other auth methods (OAuth, SSO)
             const { token, user } = await AuthService.login({
                 email,
                 password,
@@ -70,10 +68,14 @@ const AuthController = {
                 },
             });
         } catch (error) {
+            // Log the failed attempt before throwing the error
+            console.log(
+                "🛑 Login failed for user:",
+                req.body.email || "Unknown email"
+            );
+
             // Convert all login errors to 401 Invalid credentials
-            // Why? Don't reveal specific auth failures (security best practice)
             next(new AppError("Invalid credentials", 401));
-            console.log("🛑 Login failed for user:", email);
         }
     },
 
