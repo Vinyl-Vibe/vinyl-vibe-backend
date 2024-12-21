@@ -23,26 +23,68 @@ const createProduct = async (productData) => {
 
 const getAllProducts = async (queryParams) => {
     try {
-        // Start with an empty query object
         let query = {};
 
-        // Filter by type
-        // URL Examples:
-        // /products?type=vinyl
-        // /products?type=turntable
-        // /products?type=accessory
-        // /products?type=speaker
-        if (queryParams.type) {
-            query.type = queryParams.type;
+        // Build an array of conditions that will be combined with $and
+        let conditions = [];
+
+        // Enhanced search functionality
+        if (queryParams.search) {
+            try {
+                // Split search terms into words
+                const searchWords = queryParams.search.trim().split(/\s+/);
+
+                // Basic search conditions (always included)
+                const searchConditions = [
+                    { name: { $regex: queryParams.search, $options: "i" } },
+                    {
+                        "albumInfo.artist": {
+                            $regex: queryParams.search,
+                            $options: "i",
+                        },
+                    },
+                    { brand: { $regex: queryParams.search, $options: "i" } },
+                ];
+
+                // Only add description and trackList if multiple words match
+                if (searchWords.length > 1) {
+                    // Create a regex pattern that matches all words in sequence
+                    const multiWordPattern = searchWords.join("\\s+");
+
+                    // Add description and trackList searches only for multi-word matches
+                    searchConditions.push(
+                        {
+                            description: {
+                                $regex: multiWordPattern,
+                                $options: "i",
+                            },
+                        },
+                        {
+                            "albumInfo.trackList": {
+                                $regex: multiWordPattern,
+                                $options: "i",
+                            },
+                        }
+                    );
+                }
+
+                conditions.push({ $or: searchConditions });
+            } catch (searchError) {
+                console.error("Search error:", searchError);
+                conditions.push({
+                    name: { $regex: queryParams.search, $options: "i" },
+                });
+            }
         }
 
-        // Search by name (case-insensitive)
-        // URL Examples:
-        // /products?search=Dark Side of the Moon
-        // /products?search=Beatles
-        // /products?search=Pro-Ject
-        if (queryParams.search) {
-            query.name = { $regex: queryParams.search, $options: "i" };
+        // Filter by type
+        if (queryParams.type) {
+            conditions.push({ type: queryParams.type });
+        }
+
+        // Combine all conditions with $and if there are any
+        if (conditions.length > 0) {
+            query.$and = conditions;
         }
 
         // Filter by price range
@@ -77,17 +119,34 @@ const getAllProducts = async (queryParams) => {
         // Create the base query
         let productsQuery = ProductModel.find(query);
 
-        // Handle sorting
-        // URL Examples:
-        // /products?sort=price&order=asc         (sort by price, lowest first)
-        // /products?sort=price&order=desc        (sort by price, highest first)
-        // /products?sort=name&order=asc          (sort alphabetically A-Z)
-        // /products?sort=name&order=desc         (sort alphabetically Z-A)
+        // Handle sorting with more options
         if (queryParams.sort) {
-            const sortOrder = queryParams.order === "desc" ? -1 : 1;
-            productsQuery = productsQuery.sort({
-                [queryParams.sort]: sortOrder,
-            });
+            let sortConfig = {};
+
+            switch (queryParams.sort) {
+                case "price-asc":
+                    sortConfig.price = 1; // Low to High
+                    break;
+                case "price-desc":
+                    sortConfig.price = -1; // High to Low
+                    break;
+                case "name-asc":
+                    sortConfig.name = 1; // A to Z
+                    break;
+                case "name-desc":
+                    sortConfig.name = -1; // Z to A
+                    break;
+                case "newest":
+                    sortConfig.createdAt = -1; // Newest First
+                    break;
+                case "oldest":
+                    sortConfig.createdAt = 1; // Oldest First
+                    break;
+                default:
+                    sortConfig.createdAt = -1; // Default to newest first
+            }
+
+            productsQuery = productsQuery.sort(sortConfig);
         }
 
         // Handle pagination if page and limit are provided
@@ -111,15 +170,16 @@ const getAllProducts = async (queryParams) => {
                     currentPage: page,
                     totalPages: Math.ceil(total / limit),
                     totalProducts: total,
-                    productsPerPage: limit
-                }
+                    productsPerPage: limit,
+                },
             };
         }
 
         // If no pagination requested, return all products
         return await productsQuery;
     } catch (error) {
-        throw error;
+        console.error("Product search error:", error);
+        throw new AppError(`Error retrieving products: ${error.message}`, 500);
     }
 };
 
@@ -158,7 +218,7 @@ const updateProduct = async (productId, updates) => {
             // Only update provided albumInfo fields
             updates.albumInfo = {
                 ...existingProduct.albumInfo.toObject(),
-                ...updates.albumInfo
+                ...updates.albumInfo,
             };
         }
 
@@ -166,9 +226,9 @@ const updateProduct = async (productId, updates) => {
         const updatedProduct = await ProductModel.findByIdAndUpdate(
             productId,
             { $set: updates },
-            { 
-                new: true,          // Return updated document
-                runValidators: true // Run schema validators
+            {
+                new: true, // Return updated document
+                runValidators: true, // Run schema validators
             }
         );
 
