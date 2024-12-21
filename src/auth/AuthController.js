@@ -223,38 +223,31 @@ const AuthController = {
      */
     async socialLoginCallback(req, res, next) {
         try {
-            // User object is attached by Passport strategy
             const user = req.user;
+
+            console.log(
+                "Social callback triggered with user:",
+                user ? "Found" : "Not found"
+            );
 
             if (!user) {
                 throw new AppError("Authentication failed", 401);
             }
 
-            // Generate JWT token
             const token = await AuthService.generateToken(user);
 
-            // Clear any existing session
             if (req.session) {
                 req.session.destroy();
             }
 
             console.log("🔑 Social login successful for user:", user.email);
 
-            // Redirect to frontend with token for both dev and prod
-            const frontendUrl =
-                process.env.NODE_ENV === "production"
-                    ? "https://vinylvibe.live"
-                    : "http://localhost:5173";
+            const redirectUrl = `${process.env.FRONTEND_URL}/auth/callback?token=${token}`;
 
-            return res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
+            return res.redirect(redirectUrl);
         } catch (error) {
-            // In case of error, redirect to frontend error page
-            const frontendUrl =
-                process.env.NODE_ENV === "production"
-                    ? "https://vinylvibe.live"
-                    : "http://localhost:5173";
-
-            return res.redirect(`${frontendUrl}/auth/error`);
+            console.error("Social callback error:", error);
+            return res.redirect(`${process.env.FRONTEND_URL}/auth/error`);
         }
     },
 

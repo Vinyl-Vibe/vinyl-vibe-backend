@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const AuthController = require("./AuthController");
 const { validateUserAuth } = require("./AuthMiddleware");
-const rateLimit = require("express-rate-limit");
 const passport = require("./passport");
 
 /**
@@ -14,27 +13,7 @@ const passport = require("./passport");
  * - Clearer API structure for front-end developers
  */
 
-// Define rate limiters
-const passwordResetLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 10, // limit each IP to 10 requests per hour
-});
-
-// Public routes - no authentication required
-// These endpoints create or validate authentication
-router.post("/register", AuthController.register);
-router.post("/login", AuthController.login);
-router.post("/logout", validateUserAuth, AuthController.logout);
-
-// Password reset routes (public)
-router.post(
-    "/forgot-password",
-    passwordResetLimiter,
-    AuthController.forgotPassword
-);
-router.post("/reset-password", AuthController.resetPassword);
-
-// Google OAuth Routes
+// Google OAuth Routes - These must come BEFORE validateUserAuth middleware
 router.get(
     "/google",
     passport.authenticate("google", {
@@ -48,11 +27,16 @@ router.get(
     AuthController.socialLoginCallback
 );
 
-// Protected route - requires valid token
+// Protected routes - Add validateUserAuth middleware after OAuth routes
+router.post("/register", AuthController.register);
+router.post("/login", AuthController.login);
+router.post("/logout", validateUserAuth, AuthController.logout);
 router.get("/refresh", validateUserAuth, AuthController.refresh);
-
-// Get current user data
 router.get("/me", validateUserAuth, AuthController.getCurrentUser);
+
+// Password reset routes
+router.post("/forgot-password", AuthController.forgotPassword);
+router.post("/reset-password", AuthController.resetPassword);
 
 // Error handling route
 router.get("/error", (req, res) => {
