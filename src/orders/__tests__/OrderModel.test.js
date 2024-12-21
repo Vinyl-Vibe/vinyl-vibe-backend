@@ -57,12 +57,13 @@ describe('Order Model Test', () => {
       // Missing userId, products, and total
     });
 
-    const validationError = invalidOrder.validateSync(); // Using validateSync() to catch errors immediately
-
-    expect(validationError).toBeDefined();
-    expect(validationError.errors.userId).toBeDefined();
-    expect(validationError.errors.products).toBeDefined();
-    expect(validationError.errors.total).toBeDefined();
+    // Using validate() to trigger full validation (including async validation)
+    await invalidOrder.validate().catch((validationError) => {
+      expect(validationError).toBeDefined();
+      expect(validationError.errors.userId).toBeDefined();
+      expect(validationError.errors.products).toBeDefined();
+      expect(validationError.errors.total).toBeDefined();
+    });
   });
 
   it('should fail to create an order with invalid quantity', async () => {
@@ -85,10 +86,12 @@ describe('Order Model Test', () => {
       }
     });
 
-    const validationError = invalidOrder.validateSync(); // Using validateSync() to catch errors immediately
-
-    expect(validationError).toBeDefined();
-    expect(validationError.errors.products[0].quantity).toBeDefined();  // Quantity validation error
+    // Using validate() to trigger validation on the whole document, including products
+    await invalidOrder.validate().catch((validationError) => {
+      expect(validationError).toBeDefined();
+      expect(validationError.errors.products).toBeDefined(); // Ensure products array is validated
+      expect(validationError.errors.products[0].quantity).toBeDefined();  // Quantity validation error
+    });
   });
 
   it('should have a default status of "pending"', async () => {
@@ -137,10 +140,10 @@ describe('Order Model Test', () => {
       status: 'invalidStatus'  // Invalid status
     });
 
-    const validationError = invalidStatusOrder.validateSync(); // Using validateSync() to catch errors immediately
-
-    expect(validationError).toBeDefined();
-    expect(validationError.errors.status).toBeDefined();  // Status validation error
+    const validationError = await invalidStatusOrder.validate().catch(validationError => {
+      expect(validationError).toBeDefined();
+      expect(validationError.errors.status).toBeDefined();  // Status validation error
+    });
   });
 
   it('should calculate createdAt automatically', async () => {
