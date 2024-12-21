@@ -215,19 +215,45 @@ const updateProduct = async (productId, updates) => {
 
         // Log image updates
         if (updates.images || updates.thumbnail !== undefined) {
+            // Get current and new image arrays
+            const currentImages = existingProduct.images || [];
+            const newImages = updates.images || [];
+
+            // Find added and removed images
+            const addedImages = newImages.filter(
+                (img) => !currentImages.includes(img)
+            );
+            const removedImages = currentImages.filter(
+                (img) => !newImages.includes(img)
+            );
+
             console.log(
                 "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––",
                 "\n🖼️  Image update for product:",
                 existingProduct.name,
+                // Thumbnail changes
                 updates.thumbnail === ""
                     ? "\n🗑️  Thumbnail removed"
                     : updates.thumbnail
                     ? "\n✨ New thumbnail added"
                     : "",
-                updates.images
-                    ? updates.images.length === 0
-                        ? "\n🗑️  All images removed"
-                        : `\n✨ New images added: ${updates.images.length}`
+                // Image array changes
+                updates.images !== undefined
+                    ? [
+                          removedImages.length > 0
+                              ? `\n🗑️  ${removedImages.length} image${
+                                    removedImages.length !== 1 ? "s" : ""
+                                } removed`
+                              : null,
+                          addedImages.length > 0
+                              ? `\n✨ ${addedImages.length} new image${
+                                    addedImages.length !== 1 ? "s" : ""
+                                } added`
+                              : null,
+                          `\n📊 Total images: ${currentImages.length} → ${newImages.length}`,
+                      ]
+                          .filter(Boolean)
+                          .join("")
                     : "",
                 "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––\n"
             );
