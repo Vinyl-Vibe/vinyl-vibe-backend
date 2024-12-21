@@ -42,31 +42,29 @@ app.use(corsMiddleware);
 // Regular middleware for other routes
 app.use(express.json()); // Parse JSON request bodies for all other routes
 
-/**
- * Session configuration with MongoStore
- * Why MongoStore?
- * - Persists sessions across server restarts
- * - Scales across multiple processes
- * - Better for production than MemoryStore
- */
-app.use(
-    session({
-        secret: process.env.SESSION_SECRET,
-        resave: false,
-        saveUninitialized: true,
-        store: MongoStore.create({
-            mongoUrl: process.env.DATABASE_URL,
-            ttl: 24 * 60 * 60, // Session TTL (1 day)
-            autoRemove: "native", // Use MongoDB's TTL index
-        }),
-        cookie: {
-            secure: process.env.NODE_ENV === "production",
-            httpOnly: true,
-            sameSite: "none",
-            maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        },
-    })
-);
+// Configure session differently for test environment
+const sessionConfig = {
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+        sameSite: "none",
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+};
+
+// Only add MongoStore in non-test environments
+if (process.env.NODE_ENV !== "test") {
+    sessionConfig.store = MongoStore.create({
+        mongoUrl: process.env.DATABASE_URL,
+        ttl: 24 * 60 * 60,
+        autoRemove: "native",
+    });
+}
+
+app.use(session(sessionConfig));
 
 // Initialize Passport
 app.use(passport.initialize());
