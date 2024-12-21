@@ -8,6 +8,7 @@ const {
     getProductById,
     updateProduct,
     deleteProduct,
+    deleteProductImage,
 } = require("./ProductController");
 
 // Initialize the router
@@ -28,9 +29,15 @@ router.get("/:id", getProductById);
 // - requireAdmin already includes validateUserAuth check
 // - Prevents duplicate middleware execution
 // - Cleaner route definitions
-router.post("/", validateUserAuth, requireRole('admin'), createProduct);
-router.patch("/:id", validateUserAuth, requireRole('admin'), updateProduct);
-router.delete("/:id", validateUserAuth, requireRole('admin'), deleteProduct);
+router.post("/", validateUserAuth, requireRole("admin"), createProduct);
+router.patch("/:id", validateUserAuth, requireRole("admin"), updateProduct);
+router.delete("/:id", validateUserAuth, requireRole("admin"), deleteProduct);
+router.delete(
+    "/image/:publicId",
+    validateUserAuth,
+    requireRole("admin"),
+    deleteProductImage
+);
 
 // Export the router for use in the application
 module.exports = router;
