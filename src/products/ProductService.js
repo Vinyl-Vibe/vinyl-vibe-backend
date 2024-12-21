@@ -213,9 +213,28 @@ const updateProduct = async (productId, updates) => {
             throw new AppError("Product not found", 404);
         }
 
+        // Log image updates
+        if (updates.images || updates.thumbnail !== undefined) {
+            console.log(
+                "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––",
+                "\n🖼️  Image update for product:",
+                existingProduct.name,
+                updates.thumbnail === ""
+                    ? "\n🗑️  Thumbnail removed"
+                    : updates.thumbnail
+                    ? "\n✨ New thumbnail added"
+                    : "",
+                updates.images
+                    ? updates.images.length === 0
+                        ? "\n🗑️  All images removed"
+                        : `\n✨ New images added: ${updates.images.length}`
+                    : "",
+                "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––\n"
+            );
+        }
+
         // Handle nested albumInfo updates
         if (updates.albumInfo) {
-            // Only update provided albumInfo fields
             updates.albumInfo = {
                 ...existingProduct.albumInfo.toObject(),
                 ...updates.albumInfo,
@@ -227,8 +246,8 @@ const updateProduct = async (productId, updates) => {
             productId,
             { $set: updates },
             {
-                new: true, // Return updated document
-                runValidators: true, // Run schema validators
+                new: true,
+                runValidators: true,
             }
         );
 

@@ -2,6 +2,7 @@
 const { ProductModel } = require("./ProductModel");
 const ProductService = require("./ProductService");
 const { AppError } = require("../utils/middleware/errorMiddleware");
+const cloudinary = require("../utils/cloudinary");
 
 // Create a new product
 const createProduct = async (request, response, next) => {
@@ -19,7 +20,7 @@ const createProduct = async (request, response, next) => {
             productData.type,
             "\n   Price: $",
             productData.price,
-            "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––\n"
+            "\n––––––––––––––––––––––––––––––––––––––––––––––––––––\n"
         );
 
         // Send back the created product in the response
@@ -193,10 +194,44 @@ const deleteProduct = async (request, response, next) => {
     }
 };
 
+const deleteProductImage = async (request, response, next) => {
+    try {
+        const { publicId } = request.params;
+
+        const result = await cloudinary.uploader.destroy(publicId, {
+            invalidate: true,
+            resource_type: "image",
+            type: "authenticated",
+        });
+
+        if (result.result === "ok") {
+            console.log(
+                "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––",
+                "\n🔍️  Deleting image:",
+                publicId,
+                "\n✅ Image deleted successfully",
+                "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––"
+            );
+
+            return response.status(200).json({
+                status: "success",
+                message: "Image deleted successfully",
+                publicId: publicId,
+            });
+        }
+
+        throw new AppError("Failed to delete image", 400);
+    } catch (error) {
+        console.error("\n❌ Image deletion failed:", error.message);
+        next(new AppError(`Failed to delete image: ${error.message}`, 500));
+    }
+};
+
 module.exports = {
     createProduct,
     getAllProducts,
     getProductById,
     updateProduct,
     deleteProduct,
+    deleteProductImage,
 };

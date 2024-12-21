@@ -30,5 +30,6 @@ router.get("/", requireAdmin, UserController.getAllUsers);
 router.get("/:userId", canModifyUser, UserController.getUserById);
 router.patch("/:userId", canModifyUser, UserController.updateUser);
 router.delete("/:userId", canModifyUser, UserController.deleteUser);
+router.patch("/:userId/role", requireAdmin, UserController.updateUserRole);
 
 module.exports = router;

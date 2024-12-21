@@ -154,6 +154,53 @@ const UserController = {
             next(error);
         }
     },
+
+    // Update user role (admin only)
+    async updateUserRole(req, res, next) {
+        try {
+            const { userId } = req.params;
+            const { role } = req.body;
+
+            // Validate role
+            const validRoles = ["user", "admin"];
+            if (!validRoles.includes(role)) {
+                throw new AppError(
+                    `Invalid role. Must be one of: ${validRoles.join(", ")}`,
+                    400
+                );
+            }
+
+            // Prevent self-role change
+            if (userId === req.user._id.toString()) {
+                throw new AppError("Cannot modify your own role", 403);
+            }
+
+            const updatedUser = await UserService.updateUser(userId, { role });
+
+            console.log(
+                "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––",
+                "\n👑 User role updated by:",
+                req.user.email,
+                "\nUser:",
+                updatedUser.email,
+                "\nNew role:",
+                role,
+                "\n––––––––––––––––––––––––––––––––––––––––––––––––––––––\n"
+            );
+
+            res.status(200).json({
+                status: "success",
+                message: "User role updated successfully",
+                user: {
+                    id: updatedUser._id,
+                    email: updatedUser.email,
+                    role: updatedUser.role,
+                },
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
 };
 
 module.exports = UserController;
