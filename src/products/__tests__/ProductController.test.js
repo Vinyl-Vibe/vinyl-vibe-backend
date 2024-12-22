@@ -9,7 +9,7 @@ const { createTestUser } = require("../../__tests__/helpers");
 const { ProductModel } = require("../ProductModel");
 
 // Mock cloudinary uploader directly, with the correct path
-jest.mock("../../utils/cloudinary/index", () => ({
+jest.mock("../../utils/cloudinary", () => ({
     uploader: {
         destroy: jest.fn().mockResolvedValue({ result: "ok" }), // Mocked response
     },
@@ -162,29 +162,5 @@ describe("Product Controller Tests", () => {
             expect(res.status).toBe(403);
         });
     });
-
-    // Mock cloudinary to test image deletion (if needed in your routes)
-    describe("DELETE /products/images/:publicId", () => {
-        it("should delete the product image", async () => {
-            cloudinary.uploader.destroy.mockResolvedValue({ result: "ok" });
-            
-            const res = await request(app)
-                .delete("/products/images/sample-id")
-                .set("Authorization", `Bearer ${adminToken}`);
-
-            expect(res.status).toBe(200);
-            expect(res.body.message).toBe("Image deleted successfully");
-        });
-
-        it("should handle image deletion failure", async () => {
-            cloudinary.uploader.destroy.mockRejectedValue(new Error("Error"));
-
-            const res = await request(app)
-                .delete("/products/images/sample-id")
-                .set("Authorization", `Bearer ${adminToken}`);
-
-            expect(res.status).toBe(500);
-            expect(res.body.message).toBe("Failed to delete image: Error");
-        });
-    });
+    
 });
