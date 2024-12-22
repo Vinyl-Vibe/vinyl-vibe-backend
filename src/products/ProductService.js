@@ -292,16 +292,11 @@ const deleteProduct = async (productId) => {
     }
 };
 
-// Grouping all service functions into one object
-const ProductService = {
+// Export all service functions so they can be used in other parts of the application
+module.exports = {
     createProduct,
     getAllProducts,
     getProductById,
     updateProduct,
-    deleteProduct
-};
-
-// Export all service functions so they can be used in other parts of the application
-module.exports = {
-    ProductService
+    deleteProduct,
 };
