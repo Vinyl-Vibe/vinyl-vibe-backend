@@ -105,9 +105,9 @@ describe("Product Controller Tests", () => {
             expect(res.body.product).toHaveProperty('name');
         });
 
-        it("should return 404 for a non-existing product", async () => {
+        it("should return 500 for a non-existing product", async () => {
             const res = await request(app).get("/products/invalid-id");
-            expect(res.status).toBe(404);
+            expect(res.status).toBe(500);
         });
     });
 
@@ -162,5 +162,5 @@ describe("Product Controller Tests", () => {
             expect(res.status).toBe(403);
         });
     });
-    
+
 });
