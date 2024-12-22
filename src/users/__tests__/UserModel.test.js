@@ -23,6 +23,10 @@ describe("User Model Tests", () => {
 
     // Test data setup
     beforeEach(async () => {
+        // Delete any existing user with the same email to avoid the duplicate key error
+        await User.deleteMany({ email: "test@example.com" });
+
+        // Create a new user for testing
         const user = await User.create({
             email: "test@example.com",
             password: "password123",
@@ -54,7 +58,7 @@ describe("User Model Tests", () => {
         });
 
         it("should set default role to 'user' if not provided", async () => {
-            const user = new User({ email: "test@example.com", password: "password123" });
+            const user = new User({ email: "exampletestemail@example.com", password: "password123" });
             const savedUser = await user.save();
             expect(savedUser.role).toBe("user");
         });
