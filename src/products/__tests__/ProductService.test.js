@@ -69,18 +69,20 @@ describe("ProductService Tests", () => {
     describe("getAllProducts", () => {
         it("should return all products", async () => {
             const result = await ProductService.getAllProducts({});
-            expect(result).toHaveProperty("products");
-            expect(result.products.length).toBeGreaterThan(0);
+            expect(Array.isArray(result)).toBe(true); // Ensure the result is an array
+            expect(result.length).toBeGreaterThan(0);
         });
-
+    
         it("should return products filtered by type", async () => {
             const result = await ProductService.getAllProducts({ type: "vinyl" });
-            expect(result.products.length).toBeGreaterThan(0);
+            expect(Array.isArray(result)).toBe(true); // Ensure it's an array
+            expect(result.length).toBeGreaterThan(0);
         });
-
+    
         it("should return products filtered by price range", async () => {
             const result = await ProductService.getAllProducts({ "price-min": 20, "price-max": 50 });
-            expect(result.products.length).toBeGreaterThan(0);
+            expect(Array.isArray(result)).toBe(true); // Ensure it's an array
+            expect(result.length).toBeGreaterThan(0);
         });
     });
 
@@ -101,12 +103,12 @@ describe("ProductService Tests", () => {
             const updatedProduct = await ProductService.updateProduct(productId, updatedData);
             expect(updatedProduct).toHaveProperty("price", 19.99);
         });
-
+    
         it("should throw an error if the product is not found", async () => {
             const updatedData = { price: 19.99 };
             await expect(ProductService.updateProduct("invalid-id", updatedData)).rejects.toThrow(AppError);
         });
-
+    
         it("should throw an error if invalid fields are provided", async () => {
             const updatedData = { invalidField: "invalid" };
             await expect(ProductService.updateProduct(productId, updatedData)).rejects.toThrow(AppError);
