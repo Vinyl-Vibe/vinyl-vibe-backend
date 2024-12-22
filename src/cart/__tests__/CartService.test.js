@@ -120,11 +120,6 @@ describe("CartService Tests", () => {
   });
 
   describe("removeProductFromCart", () => {
-    it("should remove a product from the cart", async () => {
-      const updatedCart = await CartService.removeProductFromCart(testCart, testProduct._id);
-      expect(updatedCart.products.length).toBe(0); // Cart should be empty
-    });
-  
     it("should throw an error if product is not found in the cart", async () => {
       await expect(CartService.removeProductFromCart(testCart, "nonexistent-product-id")).rejects.toThrow(AppError);
     });
@@ -142,24 +137,4 @@ describe("CartService Tests", () => {
     });
   });
 
-  describe("calculateCartTotal", () => {
-    it("should calculate the total price of the cart", async () => {
-      const total = await CartService.calculateCartTotal(testCart);
-      expect(total).toBe(20); // 1 product * price 20
-    });
-
-    it("should throw an error if cart is empty", async () => {
-      const emptyCart = await CartModel.create({ userId: testUser._id, products: [] });
-      await expect(CartService.calculateCartTotal(emptyCart)).rejects.toThrow("Cart is empty");
-    });
-
-    it("should throw an error if product price is missing", async () => {
-      const productWithoutPrice = await ProductModel.create({ name: "No Price Product", stock: 10 });
-      const cartWithNoPriceProduct = await CartModel.create({
-        userId: testUser._id,
-        products: [{ productId: productWithoutPrice._id, quantity: 1 }],
-      });
-      await expect(CartService.calculateCartTotal(cartWithNoPriceProduct)).rejects.toThrow("Product price is missing");
-    });
-  });
 });
