@@ -4,12 +4,11 @@ const mongoose = require("mongoose");
 // Define the product schema
 const ProductSchema = new mongoose.Schema(
     {
-        // Name of the product (required, must be at least 4 characters)
+        // Name of the product (required, no minimum length)
         name: {
             type: String,
             required: true, // Field must be provided
-            minLength: 4, // Minimum length of 4 characters
-            trim: true, // Automatically trim spaces from the beginning and end
+            trim: true, // Automatically trim spaces from beginning and end
         },
 
         // General description of the product (optional field)
