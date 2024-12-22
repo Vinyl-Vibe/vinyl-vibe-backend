@@ -39,7 +39,7 @@ beforeAll(async () => {
     products: [
       {
         productId: testProduct._id,
-        quantity: 1,
+        quantity: 3,
       },
     ],
   });
@@ -74,7 +74,6 @@ describe("CartService Tests", () => {
     });
 
     it("should throw an error if cart creation fails", async () => {
-      // Simulate cart creation failure
       CartModel.prototype.save = jest.fn().mockRejectedValueOnce(new Error("Failed to create cart"));
       await expect(CartService.createCart(testUser._id, [])).rejects.toThrow("Failed to create cart");
     });
@@ -92,7 +91,7 @@ describe("CartService Tests", () => {
       });
 
       const updatedCart = await CartService.addOrUpdateProducts(testCart, [
-        { productId: testProduct._id, quantity: 2 },
+        { productId: testProduct._id, quantity: 2 }, // Adding 2, expect total to be 3
       ]);
       expect(updatedCart.products[0].quantity).toBe(3); // Since it should add quantity to existing
     });
@@ -103,13 +102,13 @@ describe("CartService Tests", () => {
         _id: testCart._id,  // Ensure _id is returned
         userId: testCart.userId,
         products: [
-          { productId: testProduct._id, quantity: 3 },  // Updated quantity
+          { productId: testProduct._id, quantity: 3 },  // Updated quantity after isUpdate
         ],
       });
 
       const updatedCart = await CartService.addOrUpdateProducts(testCart, [
-        { productId: testProduct._id, quantity: 3 },
-      ], true); // isUpdate set to true
+        { productId: testProduct._id, quantity: 3 }, // isUpdate set to true, updating quantity
+      ], true);
       expect(updatedCart.products[0].quantity).toBe(3); // Directly updating quantity
     });
 
@@ -122,17 +121,10 @@ describe("CartService Tests", () => {
 
   describe("removeProductFromCart", () => {
     it("should remove a product from the cart", async () => {
-      // Mocking the CartModel.save method to return the cart after removal
-      CartModel.prototype.save = jest.fn().mockResolvedValue({
-        _id: testCart._id,  // Ensure _id is returned
-        userId: testCart.userId,
-        products: [],  // Cart should be empty after removal
-      });
-
       const updatedCart = await CartService.removeProductFromCart(testCart, testProduct._id);
       expect(updatedCart.products.length).toBe(0); // Cart should be empty
     });
-
+  
     it("should throw an error if product is not found in the cart", async () => {
       await expect(CartService.removeProductFromCart(testCart, "nonexistent-product-id")).rejects.toThrow(AppError);
     });
@@ -140,13 +132,6 @@ describe("CartService Tests", () => {
 
   describe("clearCart", () => {
     it("should clear all products from the cart", async () => {
-      // Mocking the CartModel.save method to return an empty cart
-      CartModel.prototype.save = jest.fn().mockResolvedValue({
-        _id: testCart._id,  // Ensure _id is returned
-        userId: testCart.userId,
-        products: [],  // Empty cart after clearing
-      });
-
       const updatedCart = await CartService.clearCart(testCart);
       expect(updatedCart.products.length).toBe(0); // Cart should be empty
     });
