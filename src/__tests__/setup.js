@@ -8,8 +8,7 @@ let mongoServer;
 
 beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    await mongoose.connect(mongoUri);
+    await mongoose.connect(mongoServer.getUri());
 });
 
 afterAll(async () => {
@@ -21,7 +20,6 @@ afterAll(async () => {
 afterEach(async () => {
     const collections = mongoose.connection.collections;
     for (const key in collections) {
-        const collection = collections[key];
-        await collection.deleteMany();
+        await collections[key].deleteMany();
     }
 });
