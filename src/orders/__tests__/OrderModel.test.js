@@ -54,18 +54,34 @@ describe('Order Model Test', () => {
 
   it('should fail to create an order with missing required fields', async () => {
     const invalidOrder = new OrderModel({
-      // Missing userId, products, and total
+      // Missing required fields
+      userId: new mongoose.Types.ObjectId(),
+      products: [
+        {
+          productId: new mongoose.Types.ObjectId(),
+          quantity: 0,
+          price: ""  // Invalid price
+        }
+      ],
+      total: "",  // Invalid total
+      shippingAddress: {
+        street: '',
+        suburb: '',
+        postcode: '',
+        state: '',
+        country: ''
+      }
     });
-
-    // Using validate() to trigger full validation (including async validation)
+  
+    // Use .validate() to trigger validation errors
     await invalidOrder.validate().catch((validationError) => {
       expect(validationError).toBeDefined();
       expect(validationError.errors.userId).toBeDefined();
-      expect(validationError.errors.products).toBeDefined();
+      expect(validationError.errors.products).toBeDefined(); // Expect validation for products array
       expect(validationError.errors.total).toBeDefined();
     });
   });
-
+  
   it('should fail to create an order with invalid quantity', async () => {
     const invalidOrder = new OrderModel({
       userId: new mongoose.Types.ObjectId(),
@@ -85,8 +101,8 @@ describe('Order Model Test', () => {
         country: 'Australia'
       }
     });
-
-    // Using validate() to trigger validation on the whole document, including products
+  
+    // Use .validate() to trigger validation errors for the products array
     await invalidOrder.validate().catch((validationError) => {
       expect(validationError).toBeDefined();
       expect(validationError.errors.products).toBeDefined(); // Ensure products array is validated
@@ -140,7 +156,7 @@ describe('Order Model Test', () => {
       status: 'invalidStatus'  // Invalid status
     });
 
-    const validationError = await invalidStatusOrder.validate().catch(validationError => {
+    await invalidStatusOrder.validate().catch((validationError) => {
       expect(validationError).toBeDefined();
       expect(validationError.errors.status).toBeDefined();  // Status validation error
     });
