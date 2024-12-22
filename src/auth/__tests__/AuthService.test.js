@@ -9,7 +9,10 @@ const crypto = require("crypto");
 
 // Mock generateJWT from AuthMiddleware
 jest.mock("../../auth/AuthMiddleware", () => ({
-  generateJWT: jest.fn().mockImplementation(() => {
+  generateJWT: jest.fn().mockImplementation((userId, email, role) => {
+    if (userId === "throw") {
+      throw new Error("Token generation failed");
+    }
     return "mocked-jwt-token";
   })
 }));
@@ -49,12 +52,11 @@ describe("AuthService Tests", () => {
     });
 
     it("should throw an error if token generation fails", async () => {
-      const originalGenerateJWT = require("../../auth/AuthMiddleware").generateJWT;
+      // Mock error in generateJWT function by passing an invalid userId
       require("../../auth/AuthMiddleware").generateJWT = jest.fn().mockImplementation(() => {
         throw new Error("Token generation failed");
       });
-      await expect(AuthService.generateToken(testUser)).rejects.toThrow("Error generating token");
-      require("../../auth/AuthMiddleware").generateJWT = originalGenerateJWT; // Restore original function
+      await expect(AuthService.generateToken({ _id: "throw" })).rejects.toThrow("Error generating token");
     });
   });
 
@@ -99,8 +101,14 @@ describe("AuthService Tests", () => {
       const resetToken = "valid-reset-token";
       const newPassword = "newPassword123";
       const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+      
+      // Set the reset token in the database before running the test
       await User.updateOne({ _id: testUser._id }, { resetPasswordToken: hashedToken });
+
+      // Perform the reset password action
       await AuthService.resetPassword(resetToken, newPassword);
+
+      // Check if the password is updated
       const updatedUser = await User.findById(testUser._id);
       expect(updatedUser.password).not.toBe(testUser.password);
     });
